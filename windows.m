@@ -43,12 +43,12 @@ function h = windows(t, m, a)
     if nargin < 1
         error('Not enough input arguments.');
     end
-    h = eval(['@' t]); % evil
+    h = str2func(t);
     switch nargin
         case 2
-            h = feval(h, m);
+            h = h(m);
         case 3
-            h = feval(h, m, a);
+            h = h(m, a);
     end
 
 function w = rectangular(m)
