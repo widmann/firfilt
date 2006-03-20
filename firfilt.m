@@ -2,23 +2,22 @@
 %             and shift data by the filter's group delay
 %
 % Usage:
-%   >> EEG = firfilt(EEG, b, lowmem);
+%   >> EEG = firfilt(EEG, b, nFrames, showProgBar);
 %
 % Inputs:
-%   EEG       - EEGLAB EEG structure
-%   b         - vector of filter coefficients
+%   EEG           - EEGLAB EEG structure
+%   b             - vector of filter coefficients
 %
 % Optional inputs:
-%   lowmem    - logical filter channel by channel flag (continuous data
-%               only) {default true}
+%   nFrames       - number of frames to filter per block {default 1000}
+%   showProgBar   - logical show progress bar {default true}
 %
 % Outputs:
-%   EEG   - EEGLAB EEG structure
+%   EEG           - EEGLAB EEG structure
 %
 % Note:
-%   Setting the lowmem flag to false slightly speeds up filtering of
-%   continuous data (in particular for high density recordings), but
-%   clearly increases working memory requirements.
+%   Higher values for nFrames increase speed and working memory
+%   requirements.
 %
 % Author: Andreas Widmann, University of Leipzig, 2005
 %
@@ -45,75 +44,83 @@
 
 % $Id$
 
-function EEG = firfilt(EEG, b, lowmem)
+function EEG = firfilt(EEG, b, nFrames, showProgBar)
 
 if nargin < 2
     error('Not enough input arguments.');
 end
+if nargin < 3 || isempty(nFrames)
+    nFrames = 1000;
+end
+if nargin < 4 || isempty(showProgBar)
+    showProgBar = true;
+end
 
+% Filter's group delay
 if mod(length(b), 2) ~= 1
     error('Filter order is not even.');
 end
-groupdelay = (length(b) - 1) / 2;
+groupDelay = (length(b) - 1) / 2;
 
-% Continuous data
-if EEG.trials == 1
+% Find data discontinuities and reshape epoched data
+if EEG.trials > 1 % Epoched data
+    EEG.data = reshape(EEG.data, [EEG.nbchan EEG.pnts * EEG.trials]);
+    dcArray = 1 : EEG.pnts : EEG.pnts * (EEG.trials + 1);
+else % Continuous data
+    dcArray = [findboundaries(EEG.event) EEG.pnts + 1];
+end
 
-    epochs = findboundaries(EEG.event);
-    epochsamples = diff([epochs EEG.pnts + 1]);
+% Initialize progress bar
+if showProgBar
+    h = waitbar(0, '0% done', 'Name', 'Filtering the data -- firfilt()');
+    nProgBarSteps = 20;
+    progBarArray = ceil(linspace(size(EEG.data, 2) / nProgBarSteps, size(EEG.data, 2), nProgBarSteps));
+    tic
+end
 
-    % Split data into cell array of epochs
-    EEG.data = mat2cell(EEG.data, EEG.nbchan, epochsamples);
+for iDc = 1 : length(dcArray) - 1
 
-    for epoch = 1:size(EEG.data, 2)
+        % Pad beginning of data with DC constant and get initial conditions
+        ziDataDur = min(groupDelay, dcArray(iDc + 1) - dcArray(iDc));
+        [foo, zi] = filter(b, 1, [EEG.data(:, ones(1, groupDelay) * dcArray(iDc)) ...
+                                  EEG.data(:, dcArray(iDc) : dcArray(iDc) + ziDataDur - 1)], [], 2);
 
-        % Pad data with DC constant
-        EEG.data{epoch} = [repmat(EEG.data{epoch}(:, 1), [1 groupdelay]) EEG.data{epoch} repmat(EEG.data{epoch}(:, end), [1 groupdelay])];
+        blockArray = [dcArray(iDc) + groupDelay : nFrames : dcArray(iDc + 1) - 1 dcArray(iDc + 1)];
+        for iBlock = 1 : length(blockArray) - 1
 
-        % Lowmem flag
-        if nargin == 3 && lowmem == false
-            chans = {[1:EEG.nbchan]};
-        else
-            chans = mat2cell([1:EEG.nbchan], 1, ones(1, EEG.nbchan));
+            % Filter the data
+            [EEG.data(:, blockArray(iBlock) - groupDelay : blockArray(iBlock + 1) - groupDelay - 1), zi] = ...
+                filter(b, 1, EEG.data(:, blockArray(iBlock) : blockArray(iBlock + 1) - 1), zi, 2);
+
+            % Update progress bar
+            if showProgBar && blockArray(iBlock + 1) - groupDelay - 1 >= progBarArray(1)
+                 progBarArray(1) = [];
+                 p = (nProgBarSteps - length(progBarArray)) / nProgBarSteps;
+                 waitbar(p, h, [num2str(p * 100) '% done, ' num2str(ceil((1 - p) / p * toc)) ' s left']);
+            end
+
         end
 
-        % Filter the data
-        for chan = chans
-            EEG.data{epoch}(chan{:}, :) = filter(b, 1, EEG.data{epoch}(chan{:}, :) , [], 2);
+        % Pad end of data with DC constant
+        temp = filter(b, 1, EEG.data(:, ones(1, groupDelay) * (dcArray(iDc + 1) - 1)), zi, 2);
+        EEG.data(:, dcArray(iDc + 1) - ziDataDur : dcArray(iDc + 1) - 1) = ...
+            temp(:, end - ziDataDur + 1 : end);
+
+        % Update progress bar
+        if showProgBar && dcArray(iDc + 1) - 1 >= progBarArray(1)
+             progBarArray(1) = [];
+             p = (nProgBarSteps - length(progBarArray)) / nProgBarSteps;
+             waitbar(p, h, [num2str(p * 100) '% done, ' num2str(ceil((1 - p) / p * toc)) ' s left']);
         end
 
-        % Remove padding and group delay
-        EEG.data{epoch} = EEG.data{epoch}(:, [groupdelay * 2 + 1:end]);
+end
 
-    end
+% Reshape epoched data
+if EEG.trials > 1
+    EEG.data = reshape(EEG.data, [EEG.nbchan EEG.pnts EEG.trials]);
+end
 
-    % Concatenate filtered epochs
-    EEG.data = [EEG.data{:}];
-
-% Epoched data
-else
-    
-    % Lowmem flag
-    if nargin == 3 && lowmem == false
-        EEG.data = {EEG.data};
-    else
-        EEG.data = mat2cell(EEG.data, EEG.nbchan, EEG.pnts, ones(1, EEG.trials));
-    end
-
-    for epoch = 1:length(EEG.data)
-
-        % Pad data with DC constant
-        EEG.data{epoch} = [repmat(EEG.data{epoch}(:, 1, :), [1 groupdelay 1]) EEG.data{epoch} repmat(EEG.data{epoch}(:, end, :), [1 groupdelay 1])];
-
-        % Filter the data
-        EEG.data{epoch} = filter(b, 1, EEG.data{epoch}, [], 2);
-
-        % Remove padding and group delay
-        EEG.data{epoch} = EEG.data{epoch}(:, [groupdelay * 2 + 1:end], :);
-
-    end
-
-    % Concatenate filtered epochs
-    EEG.data = cat(3, EEG.data{:});
-
+% Deinitialize progress bar
+if showProgBar
+    close(h)
 end
