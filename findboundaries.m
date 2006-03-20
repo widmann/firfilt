@@ -46,7 +46,7 @@ if isfield(event, 'type') & isfield(event, 'latency') & cellfun('isclass', {even
     boundaries = fix(boundaries + 0.5);
 
     % Epoch onset at first sample?
-    if boundaries(1) ~= 1
+    if isempty(boundaries) || boundaries(1) ~= 1
         boundaries = [1 boundaries];
     end
 
