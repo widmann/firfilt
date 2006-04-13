@@ -58,7 +58,7 @@ function b = firws(m, f, t, w)
         error('Filter order must be a real, even, positive integer.');
     end
     f = f / 2;
-    if f < 0 | f > 1
+    if any(f <= 0) || any(f >= 0.5)
         error('Frequencies must fall in range between 0 and 1.');
     end
     if nargin < 3
@@ -90,9 +90,10 @@ function b = firws(m, f, t, w)
 
 % Compute filter kernel
 function b = fkernel(m, f, w)
-    b = [sin(2 * pi * f * [-m / 2:-1]) ./ [-m / 2:-1] ...
-        2 * pi * f ...
-        sin(2 * pi * f * [1:m / 2]) ./ [1:m / 2]] .* w; % sinc * window
+    m = -m / 2 : m / 2;
+    b(m == 0) = 2 * pi * f; % No division by zero
+    b(m ~= 0) = sin(2 * pi * f * m(m ~= 0)) ./ m(m ~= 0); % Sinc
+    b = b .* w; % Window
     b = b / sum(b); % Normalization to unity gain at DC
 
 % Spectral inversion
