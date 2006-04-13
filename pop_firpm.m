@@ -52,7 +52,7 @@
 
 function [EEG, com, b] = pop_firpm(EEG, varargin)
 
-    if exist('firpm') ~= 2
+    if exist('firpm', 'file') ~= 2
        error('Requires the signal processing toolbox.');
     end
 
@@ -68,42 +68,42 @@ function [EEG, com, b] = pop_firpm(EEG, varargin)
     if nargin < 2
         drawnow;
         ftypes = {'bandpass' 'highpass' 'lowpass' 'bandstop'};
-        uigeom = {[1 0.75 0.75] [1 0.75 0.75] [1 0.75 0.75] [1] [1 0.75 0.75] [1 0.75 0.75] [1 0.75 0.75] [1] [1 0.75 0.75]};
-        uilist = {{'style' 'text' 'string' 'Cutoff frequency(ies) [hp lp] (~-6 dB; Hz):'} ...
-                  {'style' 'edit' 'string' '' 'tag' 'fcutoffedit'} {} ...
-                  {'style' 'text' 'string' 'Transition band width:'} ...
-                  {'style' 'edit' 'string' '' 'tag' 'ftransedit'} {} ...
-                  {'style' 'text' 'string' 'Filter type:'} ...
-                  {'style' 'popupmenu' 'string' ftypes 'tag' 'ftypepop'} {} ...
+        uigeom = {[1 0.75 0.75] [1 0.75 0.75] [1 0.75 0.75] 1 [1 0.75 0.75] [1 0.75 0.75] [1 0.75 0.75] 1 [1 0.75 0.75]};
+        uilist = {{'Style' 'text' 'String' 'Cutoff frequency(ies) [hp lp] (~-6 dB; Hz):'} ...
+                  {'Style' 'edit' 'String' '' 'Tag' 'fcutoffedit'} {} ...
+                  {'Style' 'text' 'String' 'Transition band width:'} ...
+                  {'Style' 'edit' 'String' '' 'Tag' 'ftransedit'} {} ...
+                  {'Style' 'text' 'String' 'Filter type:'} ...
+                  {'Style' 'popupmenu' 'String' ftypes 'Tag' 'ftypepop'} {} ...
                   {} ...
-                  {'style' 'text' 'string' 'Passband weight:'} ...
-                  {'style' 'edit' 'string' '' 'tag' 'wtpassedit'} {} ...
-                  {'style' 'text' 'string' 'Stopband weight:'} ...
-                  {'style' 'edit' 'string' '' 'tag' 'wtstopedit'} {} ...
-                  {'style' 'text' 'string' 'Filter order (mandatory even):'} ...
-                  {'style' 'edit' 'string' '' 'tag' 'forderedit'} ...
-                  {'style' 'pushbutton' 'string' 'Estimate' 'tag' 'orderpush' 'callback' {@comcb, ftypes, EEG.srate}} ...
+                  {'Style' 'text' 'String' 'Passband weight:'} ...
+                  {'Style' 'edit' 'String' '' 'Tag' 'wtpassedit'} {} ...
+                  {'Style' 'text' 'String' 'Stopband weight:'} ...
+                  {'Style' 'edit' 'String' '' 'Tag' 'wtstopedit'} {} ...
+                  {'Style' 'text' 'String' 'Filter order (mandatory even):'} ...
+                  {'Style' 'edit' 'String' '' 'Tag' 'forderedit'} ...
+                  {'Style' 'pushbutton' 'String' 'Estimate' 'Tag' 'orderpush' 'Callback' {@comcb, ftypes, EEG.srate}} ...
                   {} ...
-                  {} {} {'Style' 'pushbutton' 'string', 'Plot filter responses' 'tag' 'plotpush' 'callback' {@comcb, ftypes, EEG.srate}}};
+                  {} {} {'Style' 'pushbutton' 'String', 'Plot filter responses' 'Tag' 'plotpush' 'Callback' {@comcb, ftypes, EEG.srate}}};
         result = inputgui(uigeom, uilist, 'pophelp(''pop_firpm'')', 'Filter the data -- pop_firpm()');
-        if length(result) == 0, return; end
+        if isempty(result), return; end
 
         args = {};
         if ~isempty(result{1})
             args = [args {'fcutoff'} {str2num(result{1})}];
         end
         if ~isempty(result{2})
-            args = [args {'ftrans'} {str2num(result{2})}];
+            args = [args {'ftrans'} {str2double(result{2})}];
         end
         args = [args {'ftype'} ftypes(result{3})];
         if ~isempty(result{4})
-            args = [args {'wtpass'} {str2num(result{4})}];
+            args = [args {'wtpass'} {str2double(result{4})}];
         end
         if ~isempty(result{5})
-            args = [args {'wtstop'} {str2num(result{5})}];
+            args = [args {'wtstop'} {str2double(result{5})}];
         end
         if ~isempty(result{6})
-            args = [args {'forder'} {str2num(result{6})}];
+            args = [args {'forder'} {str2double(result{6})}];
         end
     else
         args = varargin;
@@ -113,7 +113,7 @@ function [EEG, com, b] = pop_firpm(EEG, varargin)
     args = struct(args{:});
 
     c = parseargs(args, EEG.srate);
-    if ~isfield(args, 'forder') | isempty(args.forder)
+    if ~isfield(args, 'forder') || isempty(args.forder)
         error('Not enough input arguments');
     end
     b = firpm(args.forder, c{:});
@@ -136,17 +136,17 @@ function [EEG, com, b] = pop_firpm(EEG, varargin)
 % Convert structure args to cell array firpm parameters
 function c = parseargs(args, srate)
 
-    if ~isfield(args, {'fcutoff', 'ftype', 'ftrans'}) | isempty(args.fcutoff) | isempty(args.ftype) | isempty(args.ftrans)
+    if ~all(isfield(args, {'fcutoff', 'ftype', 'ftrans'})) || isempty(args.fcutoff) || isempty(args.ftype) || isempty(args.ftrans)
         error('Not enough input arguments.');
     end
 
     % Cutoff frequencies
     args.fcutoff = [args.fcutoff - args.ftrans / 2 args.fcutoff + args.ftrans / 2];
     args.fcutoff = sort(args.fcutoff / (srate / 2)); % Sorting and normalization
-    if any(args.fcutoff <= 0)
-        error('Cutoff frequencies - transition band width / 2 must not be <= DC');
-    elseif any(args.fcutoff >= 1)
-        error('Cutoff frequencies + transition band width / 2 must not be >= Nyquist');
+    if any(args.fcutoff < 0)
+        error('Cutoff frequencies - transition band width / 2 must not be < DC');
+    elseif any(args.fcutoff > 1)
+        error('Cutoff frequencies + transition band width / 2 must not be > Nyquist');
     end
     c = {[0 args.fcutoff 1]};
 
@@ -163,7 +163,7 @@ function c = parseargs(args, srate)
     end
 
     %Filter weights
-    if isfield(args, {'wtpass', 'wtstop'}) & ~isempty(args.wtpass) & ~isempty(args.wtstop)
+    if all(isfield(args, {'wtpass', 'wtstop'})) && ~isempty(args.wtpass) && ~isempty(args.wtstop)
         w = [args.wtstop args.wtpass];
         c{3} = w(c{2}(1:2:end) + 1);
     end
@@ -171,32 +171,34 @@ function c = parseargs(args, srate)
 % Callback
 function comcb(obj, evt, ftypes, srate)
 
-    args.fcutoff = str2num(get(findobj(gcbf, 'tag', 'fcutoffedit'), 'string'));
-    args.ftype = ftypes{get(findobj(gcbf, 'tag', 'ftypepop'), 'value')};
-    args.ftrans = str2num(get(findobj(gcbf, 'tag', 'ftransedit'), 'string'));
-    args.wtpass = str2num(get(findobj(gcbf, 'tag', 'wtpassedit'), 'string'));
-    args.wtstop = str2num(get(findobj(gcbf, 'tag', 'wtstopedit'), 'string'));
+    args.fcutoff = str2num(get(findobj(gcbf, 'Tag', 'fcutoffedit'), 'String'));
+    args.ftype = ftypes{get(findobj(gcbf, 'Tag', 'ftypepop'), 'Value')};
+    args.ftrans = str2double(get(findobj(gcbf, 'Tag', 'ftransedit'), 'String'));
+    args.wtpass = str2double(get(findobj(gcbf, 'Tag', 'wtpassedit'), 'String'));
+    args.wtstop = str2double(get(findobj(gcbf, 'Tag', 'wtstopedit'), 'String'));
     c = parseargs(args, srate);
 
-    switch get(gcbo, 'tag')
+    switch get(obj, 'Tag')
         case 'orderpush'
             [args.forder, args.wtpass, args.wtstop] = pop_firpmord(c{1}(2:end - 1), c{2}(1:2:end));
-            set(findobj(gcbf, 'tag', 'forderedit'), 'string', ceil(args.forder / 2) * 2);
-            set(findobj(gcbf, 'tag', 'wtpassedit'), 'string', args.wtpass);
-            set(findobj(gcbf, 'tag', 'wtstopedit'), 'string', args.wtstop);
+            if ~isempty(args.forder) || ~isempty(args.wtpass) || ~isempty(args.wtstop)
+                set(findobj(gcbf, 'Tag', 'forderedit'), 'String', ceil(args.forder / 2) * 2);
+                set(findobj(gcbf, 'Tag', 'wtpassedit'), 'String', args.wtpass);
+                set(findobj(gcbf, 'Tag', 'wtstopedit'), 'String', args.wtstop);
+            end
 
         case 'plotpush'
-            args.forder = str2num(get(findobj(gcbf, 'tag', 'forderedit'), 'string'));
+            args.forder = str2double(get(findobj(gcbf, 'Tag', 'forderedit'), 'String'));
             if isempty(args.forder)
                 error('Not enough input arguments');
             end
             b = firpm(args.forder, c{:});
-            H = findobj('tag', 'filter responses', 'type', 'figure');
+            H = findobj('Tag', 'filter responses', 'Type', 'figure');
             if ~isempty(H)
                 figure(H);
             else
                 H = figure;
-                set(H, 'color', [.93 .96 1], 'tag', 'filter responses');
+                set(H, 'color', [.93 .96 1], 'Tag', 'filter responses');
             end
             plotfresp(b, 1, [], srate);
     end
