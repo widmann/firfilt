@@ -8,14 +8,15 @@
 % Inputs:
 %   EEG       - EEGLAB EEG structure
 %   'fcutoff' - vector or scalar of cutoff frequency/ies (-6 dB; Hz)
+%   'forder'  - scalar filter order. Mandatory even
 %
 % Optional inputs:
-%   'ftype'   - char array filter type. {'bandpass'}, 'highpass',
-%               {'lowpass'}, or 'bandstop'
-%   'forder'  - scalar filter order. Mandatory even {default
-%               fix(EEG.srate / min(fcutoff)) * 2, *not* recommended!}
+%   'ftype'   - char array filter type. 'bandpass', 'highpass',
+%               'lowpass', or 'bandstop' {default 'bandpass' or
+%               'lowpass', depending on number of cutoff frequencies}
 %   'wtype'   - char array window type. 'rectangular', 'bartlett',
-%               'hann', 'hamming', {'blackman'}, or 'kaiser'
+%               'hann', 'hamming', 'blackman', or 'kaiser' {default
+%               'blackman'} 
 %   'warg'    - scalar kaiser beta
 %
 % Outputs:
@@ -86,25 +87,25 @@ function [EEG, com, b] = pop_firws(EEG, varargin)
         drawnow;
         ftypes = {'bandpass' 'highpass' 'lowpass' 'bandstop'};
         wtypes = {'rectangular' 'bartlett' 'hann' 'hamming' 'blackman' 'kaiser'};
-        uigeom = {[1 0.75 0.75] [1 0.75 0.75] [1] [1 0.75 0.75] [1 0.75 0.75] [1 0.75 0.75] [1] [1 0.75 0.75]};
-        uilist = {{'style' 'text' 'string' 'Cutoff frequency(ies) [hp lp] (-6 dB; Hz):'} ...
-                  {'style' 'edit' 'string' '' 'tag' 'fcutoffedit'} {} ...
-                  {'style' 'text' 'string' 'Filter type:'} ...
-                  {'style' 'popupmenu' 'string' ftypes 'tag' 'ftypepop'} {} ...
+        uigeom = {[1 0.75 0.75] [1 0.75 0.75] 1 [1 0.75 0.75] [1 0.75 0.75] [1 0.75 0.75] 1 [1 0.75 0.75]};
+        uilist = {{'Style' 'text' 'String' 'Cutoff frequency(ies) [hp lp] (-6 dB; Hz):'} ...
+                  {'Style' 'edit' 'String' '' 'Tag' 'fcutoffedit'} {} ...
+                  {'Style' 'text' 'String' 'Filter type:'} ...
+                  {'Style' 'popupmenu' 'String' ftypes 'Tag' 'ftypepop'} {} ...
                   {} ...
-                  {'style' 'text' 'string' 'Window type:'} ...
-                  {'style' 'popupmenu' 'string' wtypes 'tag' 'wtypepop' 'value' 5 'callback' @comwtype} {} ...
-                  {'style' 'text' 'string' 'Kaiser window beta:' 'tag' 'wargtext' 'enable' 'off'} ...
-                  {'style' 'edit' 'string' '' 'tag' 'wargedit' 'enable' 'off'} ...
-                  {'style' 'pushbutton' 'string' 'Estimate' 'tag' 'wargpush' 'enable' 'off' 'callback' @comwarg} ...
-                  {'style' 'text' 'string' 'Filter order (mandatory even):'} ...
-                  {'style' 'edit' 'string' '' 'tag' 'forderedit'} ...
-                  {'style' 'pushbutton' 'string' 'Estimate' 'callback' {@comforder, wtypes, EEG.srate}} ...
-                  {'style' 'edit' 'tag' 'devedit' 'visible' 'off'} ...
-                  {} {} {'Style' 'pushbutton' 'string', 'Plot filter responses' 'callback' {@comfresp, wtypes, ftypes, EEG.srate}}};
+                  {'Style' 'text' 'String' 'Window type:'} ...
+                  {'Style' 'popupmenu' 'String' wtypes 'Tag' 'wtypepop' 'Value' 5 'Callback' 'set(findobj(gcbf, ''-regexp'', ''Tag'', ''^warg''), ''Enable'', fastif(get(gcbo, ''Value'') == 6, ''on'', ''off''))'} {} ...
+                  {'Style' 'text' 'String' 'Kaiser window beta:' 'Tag' 'wargtext' 'Enable' 'off'} ...
+                  {'Style' 'edit' 'String' '' 'Tag' 'wargedit' 'Enable' 'off'} ...
+                  {'Style' 'pushbutton' 'String' 'Estimate' 'Tag' 'wargpush' 'Enable' 'off' 'Callback' @comwarg} ...
+                  {'Style' 'text' 'String' 'Filter order (mandatory even):'} ...
+                  {'Style' 'edit' 'String' '' 'Tag' 'forderedit'} ...
+                  {'Style' 'pushbutton' 'String' 'Estimate' 'Callback' {@comforder, wtypes, EEG.srate}} ...
+                  {'Style' 'edit' 'Tag' 'devedit' 'Visible' 'off'} ...
+                  {} {} {'Style' 'pushbutton' 'String', 'Plot filter responses' 'Callback' {@comfresp, wtypes, ftypes, EEG.srate}}};
         result = inputgui(uigeom, uilist, 'pophelp(''pop_firws'')', 'Filter the data -- pop_firws()');
+        if isempty(result), return; end
 
-        if length(result) == 0, return; end
         args = {};
         if ~isempty(result{1})
             args = [args {'fcutoff'} {str2num(result{1})}];
@@ -112,10 +113,10 @@ function [EEG, com, b] = pop_firws(EEG, varargin)
         args = [args {'ftype'} ftypes(result{2})];
         args = [args {'wtype'} wtypes(result{3})];
         if ~isempty(result{4})
-            args = [args {'warg'} {str2num(result{4})}];
+            args = [args {'warg'} {str2double(result{4})}];
         end
         if ~isempty(result{5})
-            args = [args {'forder'} {str2num(result{5})}];
+            args = [args {'forder'} {str2double(result{5})}];
         end
     else
         args = varargin;
@@ -145,17 +146,11 @@ function [EEG, com, b] = pop_firws(EEG, varargin)
 % Convert structure args to cell array firws parameters
 function c = parseargs(args, srate)
 
-    % Cutoff frequencies
-    if ~isfield(args, 'fcutoff') || isempty(args.fcutoff)
+    % Filter order and cutoff frequencies
+    if ~all(isfield(args, {'fcutoff' 'forder'})) || isempty(args.fcutoff) || isempty(args.forder)
         error('Not enough input arguments.');
     end
-    args.fcutoff = sort(args.fcutoff / (srate / 2)); % Sorting and normalization
-
-    % Filter order
-    if ~isfield(args, 'forder') || isempty(args.forder)
-        args.forder = fix(1 / min(args.fcutoff)) * 4; % Default, not recommended!
-    end
-    c = [{args.forder} {args.fcutoff}];
+    c = [{args.forder} {sort(args.fcutoff / (srate / 2))}]; % Sorting and normalization
 
     % Filter type
     if isfield(args, 'ftype')  && ~isempty(args.ftype)
@@ -174,52 +169,45 @@ function c = parseargs(args, srate)
 
     % Window type
     if isfield(args, 'wtype')  && ~isempty(args.wtype)
-        if isfield(args, 'warg')  && ~isempty(args.warg)
-            c = [c {windows(args.wtype, args.forder + 1, args.warg)'}];
+        if strcmpi(args.wtype, 'kaiser')
+            if isfield(args, 'warg')  && ~isempty(args.warg)
+                c = [c {windows(args.wtype, args.forder + 1, args.warg)'}];
+            else
+                error('Not enough input arguments.');
+            end
         else
             c = [c {windows(args.wtype, args.forder + 1)'}];
         end
     end
 
-% Callback popup menu window type
-function comwtype(varargin)
-    if get(varargin{1}, 'value') == 6
-        enable = 'on';
-    else
-        enable = 'off';
-    end
-    set(findobj(gcbf, 'tag', 'wargtext'), 'enable', enable);
-    set(findobj(gcbf, 'tag', 'wargedit'), 'enable', enable);
-    set(findobj(gcbf, 'tag', 'wargpush'), 'enable', enable);
-
 % Callback estimate Kaiser beta
 function comwarg(varargin)
     [warg, dev] = pop_kaiserbeta;
-    set(findobj(gcbf, 'tag', 'wargedit'), 'string', warg);
-    set(findobj(gcbf, 'tag', 'devedit'), 'string', dev);
+    set(findobj(gcbf, 'Tag', 'wargedit'), 'String', warg);
+    set(findobj(gcbf, 'Tag', 'devedit'), 'String', dev);
 
 % Callback estimate filter order
 function comforder(obj, evt, wtypes, srate)
-    wtype = wtypes{get(findobj(gcbf, 'tag', 'wtypepop'), 'value')};
-    dev = get(findobj(gcbf, 'tag', 'devedit'), 'string');
+    wtype = wtypes{get(findobj(gcbf, 'Tag', 'wtypepop'), 'Value')};
+    dev = get(findobj(gcbf, 'Tag', 'devedit'), 'String');
     [forder, dev] = pop_firwsord(wtype, srate, [], dev);
-    set(findobj(gcbf, 'tag', 'forderedit'), 'string', forder);
-    set(findobj(gcbf, 'tag', 'devedit'), 'string', dev);
+    set(findobj(gcbf, 'Tag', 'forderedit'), 'String', forder);
+    set(findobj(gcbf, 'Tag', 'devedit'), 'String', dev);
 
 % Callback plot filter responses
 function comfresp(obj, evt, wtypes, ftypes, srate)
-    args.fcutoff = str2num(get(findobj(gcbf, 'tag', 'fcutoffedit'), 'string'));
-    args.ftype = ftypes{get(findobj(gcbf, 'tag', 'ftypepop'), 'value')};
-    args.wtype = wtypes{get(findobj(gcbf, 'tag', 'wtypepop'), 'value')};
-    args.warg = str2num(get(findobj(gcbf, 'tag', 'wargedit'), 'string'));
-    args.forder = str2num(get(findobj(gcbf, 'tag', 'forderedit'), 'string'));
+    args.fcutoff = str2num(get(findobj(gcbf, 'Tag', 'fcutoffedit'), 'String'));
+    args.ftype = ftypes{get(findobj(gcbf, 'Tag', 'ftypepop'), 'Value')};
+    args.wtype = wtypes{get(findobj(gcbf, 'Tag', 'wtypepop'), 'Value')};
+    args.warg = str2double(get(findobj(gcbf, 'Tag', 'wargedit'), 'String'));
+    args.forder = str2double(get(findobj(gcbf, 'Tag', 'forderedit'), 'String'));
     c = parseargs(args, srate);
     b = firws(c{:});
-    H = findobj('tag', 'filter responses', 'type', 'figure');
+    H = findobj('Tag', 'filter responses', 'type', 'figure');
     if ~isempty(H)
         figure(H);
     else
         H = figure;
-        set(H, 'color', [.93 .96 1], 'tag', 'filter responses');
+        set(H, 'color', [.93 .96 1], 'Tag', 'filter responses');
     end
     plotfresp(b, 1, [], srate);
