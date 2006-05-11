@@ -123,4 +123,5 @@ end
 % Deinitialize progress bar
 if showProgBar
     close(h)
+    drawnow
 end
