@@ -49,7 +49,9 @@
 
 % $Id$
 
-function b = firws(m, f, t, w)
+function [b a] = firws(m, f, t, w)
+
+    a = 1;
 
     if nargin < 2
         error('Not enough input arguments');
@@ -61,16 +63,15 @@ function b = firws(m, f, t, w)
     if any(f <= 0) || any(f >= 0.5)
         error('Frequencies must fall in range between 0 and 1.');
     end
-    if nargin < 3
+    if nargin < 3 || isempty(t)
         t = '';
-        w = windows('blackman', (m + 1))';
     end
-    if nargin < 4
-        if ~ischar(t)
+    if nargin < 4 || isempty(w)
+        if ~isempty(t) && ~ischar(t)
             w = t;
             t = '';
         else
-            w = windows('blackman', (m + 1))';
+            w = windows('blackman', (m + 1));
         end
     end
     w = w(:)'; % Make window row vector
