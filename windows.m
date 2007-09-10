@@ -50,36 +50,67 @@ function h = windows(t, m, a)
         case 3
             h = h(m, a);
     end
-
+end
+    
 function w = rectangular(m)
     w = ones(m, 1);
+end
 
 function w = bartlett(m)
     w = 1 - abs(-1:2 / (m - 1):1)';
+end
 
+% von Hann
 function w = hann(m);
     w = hamming(m, 0.5);
+end
 
+% Hamming
 function w = hamming(m, a)
     if nargin < 2 || isempty(a)
         a = 25 / 46;
     end
     m = [0:1 / (m - 1):1]';
     w = a - (1 - a) * cos(2 * pi * m);
+end
 
+% Blackman
 function w = blackman(m, a)
     if nargin < 2 || isempty(a)
         a = [0.42 0.5 0.08 0];
     end
     m = [0:1 / (m - 1):1]';
     w = a(1) - a(2) * cos (2 * pi * m) + a(3) * cos(4 * pi * m) - a(4) * cos(6 * pi * m);
+end
 
+% Blackman-Harris
 function w = blackmanharris(m)
     w = blackman(m, [0.35875 0.48829 0.14128 0.01168]);
+end
 
+% Kaiser
 function w = kaiser(m, a)
     if nargin < 2 || isempty(a)
         a = 0.5;
     end
     m = [-1:2 / (m - 1):1]';
     w = besseli(0, a * sqrt(1 - m.^2)) / besseli(0, a);
+end
+
+% Tukey    
+function w = tukey(m, a)
+    if nargin < 2 || isempty(a)
+        a = 0.5;
+    end
+    if a <= 0
+        w = ones(m, 1);
+    elseif a >= 1
+        w = hann(m);
+    else
+        a = (m - 1) / 2 * a;
+        tapArray = (0:a)' / a;
+        w = [0.5 - 0.5 * cos(pi * tapArray); ...
+             ones(m - 2 * length(tapArray), 1); ...
+             0.5 - 0.5 * cos(pi * tapArray(end:-1:1))];
+    end
+end
