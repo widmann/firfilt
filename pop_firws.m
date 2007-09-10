@@ -147,7 +147,7 @@ function [EEG, com, b] = pop_firws(EEG, varargin)
 function c = parseargs(args, srate)
 
     % Filter order and cutoff frequencies
-    if ~all(isfield(args, {'fcutoff' 'forder'})) || isempty(args.fcutoff) || isempty(args.forder)
+    if ~isfield(args, 'fcutoff') || ~isfield(args, 'forder') || isempty(args.fcutoff) || isempty(args.forder)
         error('Not enough input arguments.');
     end
     c = [{args.forder} {sort(args.fcutoff / (srate / 2))}]; % Sorting and normalization
