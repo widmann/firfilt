@@ -1,0 +1,20 @@
+Version 1.1
+- NEW: added pop_xfirws to design and export EEProbe compatible filters.
+- BUG: compatibility with R14 and earlier.
+- NEW: Tukey windows.
+
+Version 1.0
+- CHG: removed misleading default value for filter order.
+- CHG: moved to EEGLAB filter menu.
+- CHG: code cleaning and formatting.
+
+Version 0.92
+- ENH: optimized filter strategy.
+- ENH: waitbar.
+- CHG: avoid eval function.
+
+Version 0.91
+- BUG: check for empty boundaries vector.
+
+Version 0.9
+starting, initial public release.
