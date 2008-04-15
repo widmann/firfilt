@@ -1,5 +1,5 @@
 Version 1.2
-- CHG: filter with double precision
+- CHG: filter with double precision.
 
 Version 1.1
 - NEW: added pop_xfirws to design and export EEProbe compatible filters.
