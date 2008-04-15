@@ -75,22 +75,22 @@ if showProgBar
     h = waitbar(0, '0% done', 'Name', 'Filtering the data -- firfilt()');
     nProgBarSteps = 20;
     progBarArray = ceil(linspace(size(EEG.data, 2) / nProgBarSteps, size(EEG.data, 2), nProgBarSteps));
-    tic
 end
 
-for iDc = 1 : length(dcArray) - 1
+for iDc = 1:(length(dcArray) - 1)
 
         % Pad beginning of data with DC constant and get initial conditions
         ziDataDur = min(groupDelay, dcArray(iDc + 1) - dcArray(iDc));
-        [foo, zi] = filter(b, 1, [EEG.data(:, ones(1, groupDelay) * dcArray(iDc)) ...
-                                  EEG.data(:, dcArray(iDc) : dcArray(iDc) + ziDataDur - 1)], [], 2);
+        [temp, zi] = filter(b, 1, double([EEG.data(:, ones(1, groupDelay) * dcArray(iDc)) ...
+                                  EEG.data(:, dcArray(iDc):(dcArray(iDc) + ziDataDur - 1))]), [], 2);
 
-        blockArray = [dcArray(iDc) + groupDelay : nFrames : dcArray(iDc + 1) - 1 dcArray(iDc + 1)];
-        for iBlock = 1 : length(blockArray) - 1
+        tic
+        blockArray = [(dcArray(iDc) + groupDelay):nFrames:(dcArray(iDc + 1) - 1) dcArray(iDc + 1)];
+        for iBlock = 1:(length(blockArray) - 1)
 
             % Filter the data
-            [EEG.data(:, blockArray(iBlock) - groupDelay : blockArray(iBlock + 1) - groupDelay - 1), zi] = ...
-                filter(b, 1, EEG.data(:, blockArray(iBlock) : blockArray(iBlock + 1) - 1), zi, 2);
+            [EEG.data(:, (blockArray(iBlock) - groupDelay):(blockArray(iBlock + 1) - groupDelay - 1)), zi] = ...
+                filter(b, 1, double(EEG.data(:, blockArray(iBlock):(blockArray(iBlock + 1) - 1))), zi, 2);
 
             % Update progress bar
             if showProgBar && blockArray(iBlock + 1) - groupDelay - 1 >= progBarArray(1)
@@ -102,9 +102,9 @@ for iDc = 1 : length(dcArray) - 1
         end
 
         % Pad end of data with DC constant
-        temp = filter(b, 1, EEG.data(:, ones(1, groupDelay) * (dcArray(iDc + 1) - 1)), zi, 2);
-        EEG.data(:, dcArray(iDc + 1) - ziDataDur : dcArray(iDc + 1) - 1) = ...
-            temp(:, end - ziDataDur + 1 : end);
+        temp = filter(b, 1, double(EEG.data(:, ones(1, groupDelay) * (dcArray(iDc + 1) - 1))), zi, 2);
+        EEG.data(:, (dcArray(iDc + 1) - ziDataDur):(dcArray(iDc + 1) - 1)) = ...
+            temp(:, (end - ziDataDur + 1):end);
 
         % Update progress bar
         if showProgBar && dcArray(iDc + 1) - 1 >= progBarArray(1)
