@@ -75,6 +75,7 @@ if showProgBar
     h = waitbar(0, '0% done', 'Name', 'Filtering the data -- firfilt()');
     nProgBarSteps = 20;
     progBarArray = ceil(linspace(size(EEG.data, 2) / nProgBarSteps, size(EEG.data, 2), nProgBarSteps));
+    tic
 end
 
 for iDc = 1:(length(dcArray) - 1)
@@ -84,7 +85,6 @@ for iDc = 1:(length(dcArray) - 1)
         [temp, zi] = filter(b, 1, double([EEG.data(:, ones(1, groupDelay) * dcArray(iDc)) ...
                                   EEG.data(:, dcArray(iDc):(dcArray(iDc) + ziDataDur - 1))]), [], 2);
 
-        tic
         blockArray = [(dcArray(iDc) + groupDelay):nFrames:(dcArray(iDc + 1) - 1) dcArray(iDc + 1)];
         for iBlock = 1:(length(blockArray) - 1)
 
