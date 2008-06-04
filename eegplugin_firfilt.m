@@ -33,7 +33,7 @@
 
 function vers = eegplugin_firfilt(fig, trystrs, catchstrs)
 
-    vers = 'firfilt1.2';
+    vers = 'firfilt1.3beta';
     if nargin < 3
         error('eegplugin_firfilt requires 3 arguments');
     end
@@ -52,12 +52,14 @@ function vers = eegplugin_firfilt(fig, trystrs, catchstrs)
 
     % menu callbacks
     % --------------
+    comfirfiltnew = [trystrs.no_check '[EEG LASTCOM] = pop_eegfiltnew(EEG);' catchstrs.new_and_hist];
     comfirws = [trystrs.no_check '[EEG LASTCOM] = pop_firws(EEG);' catchstrs.new_and_hist];
     comfirpm = [trystrs.no_check '[EEG LASTCOM] = pop_firpm(EEG);' catchstrs.new_and_hist];
     comfirma = [trystrs.no_check '[EEG LASTCOM] = pop_firma(EEG);' catchstrs.new_and_hist];
 
     % create menus if necessary
     % -------------------------
+    uimenu( menu, 'Label', 'Basic FIR filter (new)', 'CallBack', comfirfiltnew, 'Separator', 'on');
     uimenu( menu, 'Label', 'Windowed sinc FIR filter', 'CallBack', comfirws, 'Separator', 'on');
     uimenu( menu, 'Label', 'Parks-McClellan (equiripple) FIR filter', 'CallBack', comfirpm);
     uimenu( menu, 'Label', 'Moving average FIR filter', 'CallBack', comfirma);
