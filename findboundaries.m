@@ -45,6 +45,9 @@ if isfield(event, 'type') & isfield(event, 'latency') & cellfun('isclass', {even
     % Shift boundary events to epoch onset
     boundaries = fix(boundaries + 0.5);
 
+    % Remove duplicate boundary events
+    boundaries = unique(boundaries);
+
     % Epoch onset at first sample?
     if isempty(boundaries) || boundaries(1) ~= 1
         boundaries = [1 boundaries];
