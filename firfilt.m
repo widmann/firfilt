@@ -2,7 +2,7 @@
 %             and shift data by the filter's group delay
 %
 % Usage:
-%   >> EEG = firfilt(EEG, b, nFrames, showProgBar);
+%   >> EEG = firfilt(EEG, b, nFrames);
 %
 % Inputs:
 %   EEG           - EEGLAB EEG structure
@@ -10,7 +10,6 @@
 %
 % Optional inputs:
 %   nFrames       - number of frames to filter per block {default 1000}
-%   showProgBar   - logical show progress bar {default true}
 %
 % Outputs:
 %   EEG           - EEGLAB EEG structure
@@ -44,16 +43,13 @@
 
 % $Id$
 
-function EEG = firfilt(EEG, b, nFrames, showProgBar)
+function EEG = firfilt(EEG, b, nFrames)
 
 if nargin < 2
     error('Not enough input arguments.');
 end
 if nargin < 3 || isempty(nFrames)
     nFrames = 1000;
-end
-if nargin < 4 || isempty(showProgBar)
-    showProgBar = true;
 end
 
 % Filter's group delay
@@ -70,13 +66,11 @@ else % Continuous data
     dcArray = [findboundaries(EEG.event) EEG.pnts + 1];
 end
 
-% Initialize progress bar
-if showProgBar
-    h = waitbar(0, '0% done', 'Name', 'Filtering the data -- firfilt()');
-    nProgBarSteps = 20;
-    progBarArray = ceil(linspace(size(EEG.data, 2) / nProgBarSteps, size(EEG.data, 2), nProgBarSteps));
-    tic
-end
+% Initialize progress indicator
+nSteps = 20;
+step = 0;
+strLength = fprintf(1, '0%%');
+tic
 
 for iDc = 1:(length(dcArray) - 1)
 
@@ -92,13 +86,8 @@ for iDc = 1:(length(dcArray) - 1)
             [EEG.data(:, (blockArray(iBlock) - groupDelay):(blockArray(iBlock + 1) - groupDelay - 1)), zi] = ...
                 filter(b, 1, double(EEG.data(:, blockArray(iBlock):(blockArray(iBlock + 1) - 1))), zi, 2);
 
-            % Update progress bar
-            if showProgBar && blockArray(iBlock + 1) - groupDelay - 1 >= progBarArray(1)
-                 progBarArray(1) = [];
-                 p = (nProgBarSteps - length(progBarArray)) / nProgBarSteps;
-                 waitbar(p, h, [num2str(p * 100) '% done, ' num2str(ceil((1 - p) / p * toc)) ' s left']);
-            end
-
+            % Update progress indicator
+            [step, strLength] = mywaitbar((blockArray(iBlock + 1) - groupDelay - 1), size(EEG.data, 2), step, nSteps, strLength);
         end
 
         % Pad end of data with DC constant
@@ -106,12 +95,8 @@ for iDc = 1:(length(dcArray) - 1)
         EEG.data(:, (dcArray(iDc + 1) - ziDataDur):(dcArray(iDc + 1) - 1)) = ...
             temp(:, (end - ziDataDur + 1):end);
 
-        % Update progress bar
-        if showProgBar && dcArray(iDc + 1) - 1 >= progBarArray(1)
-             progBarArray(1) = [];
-             p = (nProgBarSteps - length(progBarArray)) / nProgBarSteps;
-             waitbar(p, h, [num2str(p * 100) '% done, ' num2str(ceil((1 - p) / p * toc)) ' s left']);
-        end
+        % Update progress indicator
+        [step, strLength] = mywaitbar((dcArray(iDc + 1) - 1), size(EEG.data, 2), step, nSteps, strLength);
 
 end
 
@@ -120,8 +105,19 @@ if EEG.trials > 1
     EEG.data = reshape(EEG.data, [EEG.nbchan EEG.pnts EEG.trials]);
 end
 
-% Deinitialize progress bar
-if showProgBar
-    close(h)
-    drawnow
+% Deinitialize progress indicator
+fprintf(1, '\n')
+
+end
+
+function [step, strLength] = mywaitbar(compl, total, step, nSteps, strLength)
+
+tmp = floor(compl / total * nSteps);
+if tmp > step
+    fprintf(1, [repmat('\b', 1, strLength) '%s'], repmat('.', 1, tmp - step))
+    step = tmp;
+    ete = ceil(toc / step * (nSteps - step));
+    strLength = fprintf(1, ' %d%%, ETE %02d:%02d', floor(step * 100 / nSteps), floor(ete / 60), mod(ete, 60));
+end
+
 end
