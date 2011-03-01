@@ -136,7 +136,7 @@ function [EEG, com, b] = pop_firpm(EEG, varargin)
 % Convert structure args to cell array firpm parameters
 function c = parseargs(args, srate)
 
-    if ~all(isfield(args, {'fcutoff', 'ftype', 'ftrans'})) || isempty(args.fcutoff) || isempty(args.ftype) || isempty(args.ftrans)
+    if ~isfield(args, 'fcutoff') || ~isfield(args, 'ftype') || ~isfield(args, 'ftrans') || isempty(args.fcutoff) || isempty(args.ftype) || isempty(args.ftrans)
         error('Not enough input arguments.');
     end
 
