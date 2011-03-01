@@ -69,7 +69,8 @@ end
 % Initialize progress indicator
 nSteps = 20;
 step = 0;
-strLength = fprintf(1, '0%%');
+fprintf(1, 'firfilt(): |');
+strLength = fprintf(1, [repmat(' ', 1, nSteps - step) '|   0%%']);
 tic
 
 for iDc = 1:(length(dcArray) - 1)
@@ -112,12 +113,13 @@ end
 
 function [step, strLength] = mywaitbar(compl, total, step, nSteps, strLength)
 
+progStrArray = '/-\|';
 tmp = floor(compl / total * nSteps);
 if tmp > step
-    fprintf(1, [repmat('\b', 1, strLength) '%s'], repmat('.', 1, tmp - step))
+    fprintf(1, [repmat('\b', 1, strLength) '%s'], repmat('=', 1, tmp - step))
     step = tmp;
     ete = ceil(toc / step * (nSteps - step));
-    strLength = fprintf(1, ' %d%%, ETE %02d:%02d', floor(step * 100 / nSteps), floor(ete / 60), mod(ete, 60));
+    strLength = fprintf(1, [repmat(' ', 1, nSteps - step) '%s %3d%%, ETE %02d:%02d'], progStrArray(mod(step - 1, 4) + 1), floor(step * 100 / nSteps), floor(ete / 60), mod(ete, 60));
 end
 
 end
