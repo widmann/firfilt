@@ -1,28 +1,30 @@
-% pop_firws() - Filter data using windowed sinc FIR filter
+% pop_xfirws() - Design and export xfir compatible windowed sinc FIR filter
 %
 % Usage:
-%   >> [EEG, com, b] = pop_firws(EEG); % pop-up window mode
-%   >> [EEG, com, b] = pop_firws(EEG, 'key1', value1, 'key2', ...
-%                                value2, 'keyn', valuen);
+%   >> pop_xfirws; % pop-up window mode
+%   >> [b, a] = pop_xfirws; % pop-up window mode
+%   >> pop_xfirws('key1', value1, 'key2', value2, 'keyn', valuen);
+%   >> [b, a] = pop_xfirws('key1', value1, 'key2', value2, 'keyn', valuen);
 %
 % Inputs:
-%   EEG       - EEGLAB EEG structure
+%   'srate'   - scalar sampling rate (Hz)
 %   'fcutoff' - vector or scalar of cutoff frequency/ies (-6 dB; Hz)
 %   'forder'  - scalar filter order. Mandatory even
 %
 % Optional inputs:
-%   'ftype'   - char array filter type. 'bandpass', 'highpass',
-%               'lowpass', or 'bandstop' {default 'bandpass' or
-%               'lowpass', depending on number of cutoff frequencies}
-%   'wtype'   - char array window type. 'rectangular', 'bartlett',
-%               'hann', 'hamming', 'blackman', or 'kaiser' {default
-%               'blackman'} 
-%   'warg'    - scalar kaiser beta
+%   'ftype'       - char array filter type. 'bandpass', 'highpass',
+%                   'lowpass', or 'bandstop' {default 'bandpass' or
+%                   'lowpass', depending on number of cutoff frequencies}
+%   'wtype'       - char array window type. 'rectangular', 'bartlett',
+%                   'hann', 'hamming', 'blackman', or 'kaiser' {default
+%                   'blackman'} 
+%   'warg'        - scalar kaiser beta
+%   'filename'    - char array export filename
+%   'pathname'    - char array export pathname {default '.'}
 %
 % Outputs:
-%   EEG       - filtered EEGLAB EEG structure
-%   com       - history string
 %   b         - filter coefficients
+%   a         - filter coefficients
 %
 % Note:
 %   Window based filters' transition band width is defined by filter
@@ -47,14 +49,20 @@
 %   * m = filter order
 %   ** estimate for higher m only
 %
-% Author: Andreas Widmann, University of Leipzig, 2005
+% Example:
+%   fs = 500; tbw = 2; dev = 0.001;
+%   beta = pop_kaiserbeta(dev);
+%   m = pop_firwsord('kaiser', fs, tbw, dev);
+%   pop_xfirws('srate', fs, 'fcutoff', [1 25], 'ftype', 'bandpass', 'wtype', 'kaiser', 'warg', beta, 'forder', m, 'filename', 'foo.fir')
+%
+% Author: Andreas Widmann, University of Leipzig, 2011
 %
 % See also:
 %   firfilt, firws, pop_firwsord, pop_kaiserbeta, plotfresp, windows
 
 %123456789012345678901234567890123456789012345678901234567890123456789012
 
-% Copyright (C) 2005 Andreas Widmann, University of Leipzig, widmann@uni-leipzig.de
+% Copyright (C) 2011 Andreas Widmann, University of Leipzig, widmann@uni-leipzig.de
 %
 % This program is free software; you can redistribute it and/or modify
 % it under the terms of the GNU General Public License as published by
@@ -90,7 +98,7 @@ if nargin < 1
               {'Style' 'popupmenu' 'String' ftypes 'Tag' 'ftypepop'} {} ...
               {} ...
               {'Style' 'text' 'String' 'Window type:'} ...
-              {'Style' 'popupmenu' 'String' wtypes 'Tag' 'wtypepop' 'Value' 5 'Callback' 'set(findobj(gcbf, ''-regexp'', ''Tag'', ''^warg''), ''Enable'', fastif(get(gcbo, ''Value'') == 6, ''on'', ''off'')), set(findobj(gcbf, ''Tag'', ''wargedit''), ''String'', '''')'} {} ...
+              {'Style' 'popupmenu' 'String' wtypes 'Tag' 'wtypepop' 'Value' 5 'Callback' 'temp = {''off'', ''on''}; set(findobj(gcbf, ''-regexp'', ''Tag'', ''^warg''), ''Enable'', temp{double(get(gcbo, ''Value'') == 6) + 1}), set(findobj(gcbf, ''Tag'', ''wargedit''), ''String'', '''')'} {} ...
               {'Style' 'text' 'String' 'Kaiser window beta:' 'Tag' 'wargtext' 'Enable' 'off'} ...
               {'Style' 'edit' 'String' '' 'Tag' 'wargedit' 'Enable' 'off'} ...
               {'Style' 'pushbutton' 'String' 'Estimate' 'Tag' 'wargpush' 'Enable' 'off' 'Callback' @comwarg} ...
@@ -166,7 +174,7 @@ end
 b = firws(firwsArgArray{:});
 a = 1;
 
-if nargout == 0
+if nargout == 0 || isfield(Arg, 'filename')
     
     % Open file
     if ~isfield(Arg, 'filename') || isempty(Arg.filename)
@@ -175,14 +183,14 @@ if nargout == 0
     if ~isfield(Arg, 'pathname') || isempty(Arg.pathname)
         Arg.pathname = '.';
     end
-    [fid message] = fopen(fullfile(Arg.pathname, Arg.filename), 'w', 'l');
+    [fid message] = fopen(fullfile(Arg.pathname, Arg.filename), 'w', 'l'); 
     if fid == -1
         error(message)
     end
 
     % Author
     fprintf(fid, '[author]\n');
-    fprintf(fid, '%s\n\n', 'pop_xfirws 1.1');
+    fprintf(fid, '%s\n\n', 'pop_xfirws 1.5.1');
 
     % FIR design
     fprintf(fid, '[fir design]\n');
@@ -201,7 +209,9 @@ if nargout == 0
     % Close file
     fclose(fid);
 
-else
+end
+
+if nargout > 0
     varargout = {b a};
 end
 
@@ -226,7 +236,7 @@ function comfresp(obj, evt, wtypes, ftypes)
     Arg.fcutoff = str2num(get(findobj(gcbf, 'Tag', 'fcutoffedit'), 'String'));
     Arg.ftype = ftypes{get(findobj(gcbf, 'Tag', 'ftypepop'), 'Value')};
     Arg.wtype = wtypes{get(findobj(gcbf, 'Tag', 'wtypepop'), 'Value')};
-    Arg.warg = str2double(get(findobj(gcbf, 'Tag', 'wargedit'), 'String'));
+    Arg.warg = str2num(get(findobj(gcbf, 'Tag', 'wargedit'), 'String'));
     Arg.forder = str2double(get(findobj(gcbf, 'Tag', 'forderedit'), 'String'));
     xfirwsArgArray(1, :) = fieldnames(Arg);
     xfirwsArgArray(2, :) = struct2cell(Arg);
