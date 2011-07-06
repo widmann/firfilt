@@ -1,6 +1,13 @@
+Version 1.5.1
+- CHG: removed dependency on EEGLAB fastif function
+- CHG: removed pop_xfirws dependency on EEGLAB for command line use
+- BUG: plotting of frequency response with empty window parameters
+- BUG: error in firws documentation
+- ENH: improved pop_xfirws command line usability
+
 Version 1.5
 - BUG: pop_firpm compatibility with R14 and earlier.
-- CHG: Command line progress indicator.
+- CHG: command line progress indicator.
 
 Version 1.4
 - BUG: duplicate boundary event handling.
