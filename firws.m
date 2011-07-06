@@ -4,7 +4,7 @@
 %   >> b = firws(m, f);
 %   >> b = firws(m, f, w);
 %   >> b = firws(m, f, t);
-%   >> b = firws(m, f, w, t);
+%   >> b = firws(m, f, t, w);
 %
 % Inputs:
 %   m - filter order (mandatory even)
@@ -18,6 +18,11 @@
 %
 % Output:
 %   b - filter coefficients
+%
+% Example:
+%   fs = 500; cutoff = 0.5; tbw = 1;
+%   m  = pop_firwsord('hamming', fs, tbw);
+%   b  = firws(m, cutoff / (fs / 2), 'high', windows('hamming', m + 1)); 
 %
 % References:
 %   Smith, S. W. (1999). The scientist and engineer's guide to digital
