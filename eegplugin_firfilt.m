@@ -29,11 +29,9 @@
 % along with this program; if not, write to the Free Software
 % Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-% $Id$
-
 function vers = eegplugin_firfilt(fig, trystrs, catchstrs)
 
-    vers = 'firfilt1.5.1';
+    vers = 'firfilt1.5.2';
     if nargin < 3
         error('eegplugin_firfilt requires 3 arguments');
     end

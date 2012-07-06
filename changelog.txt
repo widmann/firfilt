@@ -1,3 +1,6 @@
+Version 1.5.2
+- CHG: warning message
+
 Version 1.5.1
 - CHG: removed dependency on EEGLAB fastif function
 - CHG: removed pop_xfirws dependency on EEGLAB for command line use
