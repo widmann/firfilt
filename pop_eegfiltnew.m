@@ -27,11 +27,13 @@
 %
 % Note:
 %   pop_eegfiltnew is intended as a temporary replacement for deprecated
-%   pop_eegfilt function. Transition band width defaults to 20% of the
-%   lowest passband edge frequency. Window type is hardcoded to Hamming.
-%   Migration to pop_firws is recommended. pop_firws allows user defined
-%   window type and estimation of filter order by user defined transition
-%   band width.
+%   pop_eegfilt function for backward compatibility purposes only.
+%   Transition band width defaults to 20% of the lowest passband edge
+%   frequency. This will result in very narrow transition bands and
+%   excessively long filters. Window type is hardcoded to Hamming.
+%   Migration to windowed sinc FIR filters (pop_firws) is strongly
+%   recommended. pop_firws allows user defined window type and estimation
+%   of filter order by user defined transition band width.
 %
 % Author: Andreas Widmann, University of Leipzig, 2008
 %
@@ -56,8 +58,6 @@
 % along with this program; if not, write to the Free Software
 % Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-% $Id$
-
 function [EEG, com, b] = pop_eegfiltnew(EEG, locutoff, hicutoff, filtorder, revfilt, usefft, plotfreqz)
 
 com = '';
@@ -73,9 +73,11 @@ end
 % GUI
 if nargin < 2
 
-    geometry = {[3, 1], [3, 1], [3, 1], 1, 1};
+    geometry = {1, [3, 1], [3, 1], [3, 1], 1, 1};
+    geomvert = [3 1 1 1 1 1];
 
-    uilist = {{'style', 'text', 'string', 'Lower edge of the frequency pass band (Hz)'} ...
+    uilist = {{'style', 'text', 'string', {'This function is intended for backward compatibility purposes only.', 'Transition band width defaults to 20% of the lowest passband edge', 'frequency resulting in excessively long filters. Migration to', 'windowed sinc FIR filters (pop_firws) is strongly recommended.'}} ...
+              {'style', 'text', 'string', 'Lower edge of the frequency pass band (Hz)'} ...
               {'style', 'edit', 'string', ''} ...
               {'style', 'text', 'string', 'Higher edge of the frequency pass band (Hz)'} ...
               {'style', 'edit', 'string', ''} ...
@@ -84,7 +86,7 @@ if nargin < 2
               {'style', 'checkbox', 'string', 'Notch filter the data instead of pass band', 'value', 0} ...
               {'style', 'checkbox', 'string', 'Plot frequency response', 'value', 1}};
 
-    result = inputgui('geometry', geometry, 'uilist', uilist, 'title', 'Filter the data -- pop_eegfiltnew()', 'helpcom', 'pophelp(''pop_eegfiltnew'')');
+    result = inputgui('geometry', geometry, 'geomvert', geomvert, 'uilist', uilist, 'title', 'Filter the data -- pop_eegfiltnew()', 'helpcom', 'pophelp(''pop_eegfiltnew'')');
 
     if isempty(result), return; end
 
@@ -116,6 +118,8 @@ else
     end
     
 end
+
+warning('This function is intended for backward compatibility purposes only. Transition band width defaults to 20% of the lowest passband edge frequency resulting in excessively long filters. Migration to windowed sinc FIR filters (pop_firws) is strongly recommended.')
 
 % Constants
 TRANSWIDTHRATIO = 0.2;
