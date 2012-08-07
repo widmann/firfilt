@@ -26,16 +26,17 @@
 %   b         - filter coefficients
 %
 % Note:
-%   pop_eegfiltnew is intended as a temporary replacement for deprecated
-%   pop_eegfilt function for backward compatibility purposes only.
-%   Transition band width defaults to 20% of the lowest passband edge
-%   frequency. This will result in very narrow transition bands and
-%   excessively long filters. Window type is hardcoded to Hamming.
-%   Migration to windowed sinc FIR filters (pop_firws) is strongly
-%   recommended. pop_firws allows user defined window type and estimation
-%   of filter order by user defined transition band width.
+%   pop_eegfiltnew is intended as a replacement for the deprecated
+%   pop_eegfilt function. Required filter order/transition band width is
+%   estimated with the following heuristic in default mode: transition band
+%   width is 25% of the lower passband edge, but not lower than 2 Hz, where
+%   possible (for bandpass, highpass, and bandstop) and distance from
+%   passband edge to critical frequency (DC, Nyquist) otherwise. Window
+%   type is hardcoded to Hamming. Migration to windowed sinc FIR filters
+%   (pop_firws) is recommended. pop_firws allows user defined window type
+%   and estimation of filter order by user defined transition band width.
 %
-% Author: Andreas Widmann, University of Leipzig, 2008
+% Author: Andreas Widmann, University of Leipzig, 2012
 %
 % See also:
 %   firfilt, firws, windows
@@ -73,16 +74,16 @@ end
 % GUI
 if nargin < 2
 
-    geometry = {1, [3, 1], [3, 1], [3, 1], 1, 1};
-    geomvert = [3 1 1 1 1 1];
+    geometry = {[3, 1], [3, 1], [3, 1], 1, 1, 1};
+    geomvert = [1 1 1 2 1 1];
 
-    uilist = {{'style', 'text', 'string', {'This function is intended for backward compatibility purposes only.', 'Transition band width defaults to 20% of the lowest passband edge', 'frequency resulting in excessively long filters. Migration to', 'windowed sinc FIR filters (pop_firws) is strongly recommended.'}} ...
-              {'style', 'text', 'string', 'Lower edge of the frequency pass band (Hz)'} ...
+    uilist = {{'style', 'text', 'string', 'Lower edge of the frequency pass band (Hz)'} ...
               {'style', 'edit', 'string', ''} ...
               {'style', 'text', 'string', 'Higher edge of the frequency pass band (Hz)'} ...
               {'style', 'edit', 'string', ''} ...
-              {'style', 'text', 'string', 'FIR Filter order (default is automatic)'} ...
+              {'style', 'text', 'string', 'FIR Filter order (Mandatory even. Default is automatic*)'} ...
               {'style', 'edit', 'string', ''} ...
+              {'style', 'text', 'string', {'*See help text for a description of the default filter order heuristic.', 'Manual definition is recommended.'}} ...
               {'style', 'checkbox', 'string', 'Notch filter the data instead of pass band', 'value', 0} ...
               {'style', 'checkbox', 'string', 'Plot frequency response', 'value', 1}};
 
@@ -111,7 +112,7 @@ else
     if nargin < 6
         usefft = [];
     elseif usefft == 1
-        error('FFT filtering not supported. Argument is provided for backward compatibility only.')
+        error('FFT filtering not supported. Argument is provided for backward compatibility in command line mode only.')
     end
     if nargin < 7
         plotfreqz = 0;
@@ -119,16 +120,18 @@ else
     
 end
 
-warning('This function is intended for backward compatibility purposes only. Transition band width defaults to 20% of the lowest passband edge frequency resulting in excessively long filters. Migration to windowed sinc FIR filters (pop_firws) is strongly recommended.')
-
 % Constants
-TRANSWIDTHRATIO = 0.2;
+TRANSWIDTHRATIO = 0.25;
 fNyquist = EEG.srate / 2;
 
 % Check arguments
 if locutoff == 0, locutoff = []; end
 if hicutoff == 0, hicutoff = []; end
-if isempty(hicutoff), revfilt = ~revfilt; end
+if isempty(hicutoff) % Convert highpass to inverted lowpass
+    hicutoff = locutoff;
+    locutoff = [];
+    revfilt = ~revfilt;
+end
 edgeArray = sort([locutoff hicutoff]);
 
 if isempty(edgeArray)
@@ -143,18 +146,23 @@ if ~isempty(filtorder) && (filtorder < 2 || mod(filtorder, 2) ~= 0)
 end
 
 % Max stop-band width
-stopWidthArray = edgeArray; % Band-/highpass
+maxTBWArray = edgeArray; % Band-/highpass
 if revfilt == 0 % Band-/lowpass
-    stopWidthArray(end) = fNyquist - edgeArray(end);
+    maxTBWArray(end) = fNyquist - edgeArray(end);
 elseif length(edgeArray) == 2 % Bandstop
-    stopWidthArray = diff(edgeArray) / 2;
+    maxTBWArray = diff(edgeArray) / 2;
 end
-maxDf = min(stopWidthArray);
+maxDf = min(maxTBWArray);
 
-% Transition bandwidth and filter order
+% Transition band width and filter order
 if isempty(filtorder)
 
-    df = min([(edgeArray * TRANSWIDTHRATIO) maxDf]);
+    % Default filter order heuristic
+    if revfilt == 1 % Highpass and bandstop
+        df = min([max([maxDf * TRANSWIDTHRATIO 2]) maxDf]);
+    else % Lowpass and bandpass
+        df = min([max([edgeArray(1) * TRANSWIDTHRATIO 2]) maxDf]);
+    end
 
     filtorder = 3.3 / (df / EEG.srate); % Hamming window
     filtorder = ceil(filtorder / 2) * 2; % Filter order must be even.
@@ -162,11 +170,12 @@ if isempty(filtorder)
 else
 
     df = 3.3 / filtorder * EEG.srate; % Hamming window
-    filtorderMin = ceil(3.3 ./ ([maxDf (maxDf * 2)] / EEG.srate) / 2) * 2;
-    if filtorder < filtorderMin(2)
-        error('Filter order too low. Minimum required filter order is %d. For better results a minimum filter order of %d is recommended.', filtorderMin(2), filtorderMin(1))
-    elseif filtorder < filtorderMin(1)
-        warning('firfilt:filterOrderLow', 'Transition band is wider than maximum stop-band width. For better results a minimum filter order of %d is recommended.', filtorderMin(1))
+    filtorderMin = ceil(3.3 ./ ((maxDf * 2) / EEG.srate) / 2) * 2;
+    filtorderOpt = ceil(3.3 ./ (maxDf / EEG.srate) / 2) * 2;
+    if filtorder < filtorderMin
+        error('Filter order too low. Minimum required filter order is %d. For better results a minimum filter order of %d is recommended.', filtorderMin, filtorderOpt)
+    elseif filtorder < filtorderOpt
+        warning('firfilt:filterOrderLow', 'Transition band is wider than maximum stop-band width. For better results a minimum filter order of %d is recommended. Reported might deviate from effective -6dB cutoff frequency.', filtorderOpt)
     end
 
 end
@@ -179,7 +188,7 @@ fprintf('pop_eegfiltnew() - passband edge(s): %s Hz\n', mat2str(edgeArray))
 % Passband edge to cutoff (transition band center; -6 dB)
 dfArray = {df, [-df, df]; -df, [df, -df]};
 cutoffArray = edgeArray + dfArray{revfilt + 1, length(edgeArray)} / 2;
-fprintf('pop_eegfiltnew() - cutoff frequency(ies): %s Hz\n', mat2str(cutoffArray))
+fprintf('pop_eegfiltnew() - cutoff frequency(ies) (-6 dB): %s Hz\n', mat2str(cutoffArray))
 
 % Window
 winArray = windows('hamming', filtorder + 1);
@@ -194,7 +203,7 @@ end
 
 % Plot frequency response
 if plotfreqz
-    freqz(b, 1, 2048, EEG.srate);
+    freqz(b, 1, 8192, EEG.srate);
 end
 
 % Filter
