@@ -1,3 +1,5 @@
+- CHG: menu order
+
 Version 1.5.3
 - CHG: new TBW heuristic for pop_eegfiltnew.m
 

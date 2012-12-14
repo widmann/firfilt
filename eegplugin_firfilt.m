@@ -57,7 +57,7 @@ function vers = eegplugin_firfilt(fig, trystrs, catchstrs)
 
     % create menus if necessary
     % -------------------------
-    uimenu( menu, 'Label', 'Basic FIR filter (new)', 'CallBack', comfirfiltnew, 'Separator', 'on');
-    uimenu( menu, 'Label', 'Windowed sinc FIR filter', 'CallBack', comfirws, 'Separator', 'on');
-    uimenu( menu, 'Label', 'Parks-McClellan (equiripple) FIR filter', 'CallBack', comfirpm);
-    uimenu( menu, 'Label', 'Moving average FIR filter', 'CallBack', comfirma);
+    uimenu( menu, 'Label', 'Windowed sinc FIR filter (preferred)', 'CallBack', comfirws, 'position', 1);
+    uimenu( menu, 'Label', 'Parks-McClellan (equiripple) FIR filter', 'CallBack', comfirpm, 'position', 2);
+    uimenu( menu, 'Label', 'Moving average FIR filter', 'CallBack', comfirma, 'position', 3);
+    uimenu( menu, 'Label', 'Basic FIR filter (new)', 'CallBack', comfirfiltnew, 'Separator', 'on', 'position', 4);
