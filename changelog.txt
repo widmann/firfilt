@@ -1,3 +1,4 @@
+Version 1.5.4
 - CHG: menu order
 
 Version 1.5.3

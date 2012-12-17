@@ -31,7 +31,7 @@
 
 function vers = eegplugin_firfilt(fig, trystrs, catchstrs)
 
-    vers = 'firfilt1.5.3';
+    vers = 'firfilt1.5.4';
     if nargin < 3
         error('eegplugin_firfilt requires 3 arguments');
     end
@@ -57,7 +57,8 @@ function vers = eegplugin_firfilt(fig, trystrs, catchstrs)
 
     % create menus if necessary
     % -------------------------
-    uimenu( menu, 'Label', 'Windowed sinc FIR filter (preferred)', 'CallBack', comfirws, 'position', 1);
-    uimenu( menu, 'Label', 'Parks-McClellan (equiripple) FIR filter', 'CallBack', comfirpm, 'position', 2);
-    uimenu( menu, 'Label', 'Moving average FIR filter', 'CallBack', comfirma, 'position', 3);
-    uimenu( menu, 'Label', 'Basic FIR filter (new)', 'CallBack', comfirfiltnew, 'Separator', 'on', 'position', 4);
+    uimenu( menu, 'Label', 'Basic FIR filter (new)', 'CallBack', comfirfiltnew, 'Separator', 'on', 'position', 1);
+    uimenu( menu, 'Label', 'Windowed sinc FIR filter', 'CallBack', comfirws, 'position', 2);
+    uimenu( menu, 'Label', 'Parks-McClellan (equiripple) FIR filter', 'CallBack', comfirpm, 'position', 3);
+    uimenu( menu, 'Label', 'Moving average FIR filter', 'CallBack', comfirma, 'position', 4);
+  
