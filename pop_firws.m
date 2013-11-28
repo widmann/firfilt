@@ -11,13 +11,15 @@
 %   'forder'  - scalar filter order. Mandatory even
 %
 % Optional inputs:
-%   'ftype'   - char array filter type. 'bandpass', 'highpass',
-%               'lowpass', or 'bandstop' {default 'bandpass' or
-%               'lowpass', depending on number of cutoff frequencies}
-%   'wtype'   - char array window type. 'rectangular', 'bartlett',
-%               'hann', 'hamming', 'blackman', or 'kaiser' {default
-%               'blackman'} 
-%   'warg'    - scalar kaiser beta
+%   'ftype'       - char array filter type. 'bandpass', 'highpass',
+%                   'lowpass', or 'bandstop' {default 'bandpass' or
+%                   'lowpass', depending on number of cutoff frequencies}
+%   'wtype'       - char array window type. 'rectangular', 'bartlett',
+%                   'hann', 'hamming', 'blackman', or 'kaiser' {default
+%                   'blackman'} 
+%   'warg'        - scalar kaiser beta
+%   'minphase'    - scalar boolean minimum-phase converted causal filter
+%                   {default false}
 %
 % Outputs:
 %   EEG       - filtered EEGLAB EEG structure
@@ -28,24 +30,26 @@
 %   Window based filters' transition band width is defined by filter
 %   order and window type/parameters. Stopband attenuation equals
 %   passband ripple and is defined by the window type/parameters. Refer
-%   to table below for typical parameters. (Windowed sinc) FIR filters
-%   are zero phase in passband when shifted by the filters group delay
-%   (what firfilt does). Pi phase jumps noticable in the phase reponse
-%   reflect a negative frequency response and only occur in the
-%   stopband.
+%   to table below for typical parameters. (Windowed sinc) symmetric FIR
+%   filters have linear phase and can be made zero phase (non-causal) by
+%   shifting the data by the filters group delay (what firfilt does by
+%   default). Pi phase jumps noticable in the phase reponse reflect a
+%   negative frequency response and only occur in the stopband. pop_firws
+%   also allows causal filtering with minimum-phase (non-linear!) converted
+%   filter coefficients with similar properties. Non-linear causal
+%   filtering is NOT recommended for most use cases.
 %
 %               Beta    Max stopband    Max passband    Max passband    Transition width    Mainlobe width
 %                       attenuation     deviation       ripple (dB)     (normalized freq)   (normalized rad freq)
 %                       (dB)
 %   Rectangular         -21             0.0891          1.552           0.9 / m*             4 * pi / m
-%   Bartlett            -25             0.0562          0.977           (2.9** / m)          8 * pi / m
+%   Bartlett            -25             0.0562          0.977                                8 * pi / m
 %   Hann                -44             0.0063          0.109           3.1 / m              8 * pi / m
 %   Hamming             -53             0.0022          0.038           3.3 / m              8 * pi / m
 %   Blackman            -74             0.0002          0.003           5.5 / m             12 * pi / m
 %   Kaiser      5.653   -60             0.001           0.017           3.6 / m
 %   Kaiser      7.857   -80             0.0001          0.002           5.0 / m
 %   * m = filter order
-%   ** estimate for higher m only
 %
 % Author: Andreas Widmann, University of Leipzig, 2005
 %
@@ -85,7 +89,7 @@ function [EEG, com, b] = pop_firws(EEG, varargin)
         drawnow;
         ftypes = {'bandpass' 'highpass' 'lowpass' 'bandstop'};
         wtypes = {'rectangular' 'bartlett' 'hann' 'hamming' 'blackman' 'kaiser'};
-        uigeom = {[1 0.75 0.75] [1 0.75 0.75] 1 [1 0.75 0.75] [1 0.75 0.75] [1 0.75 0.75] 1 [1 0.75 0.75]};
+        uigeom = {[1 0.75 0.75] [1 0.75 0.75] 1 [1 0.75 0.75] [1 0.75 0.75] [1 0.75 0.75] [1 1.5] 1 [1 0.75 0.75]};
         uilist = {{'Style' 'text' 'String' 'Cutoff frequency(ies) [hp lp] (-6 dB; Hz):'} ...
                   {'Style' 'edit' 'String' '' 'Tag' 'fcutoffedit'} {} ...
                   {'Style' 'text' 'String' 'Filter type:'} ...
@@ -99,6 +103,7 @@ function [EEG, com, b] = pop_firws(EEG, varargin)
                   {'Style' 'text' 'String' 'Filter order (mandatory even):'} ...
                   {'Style' 'edit' 'String' '' 'Tag' 'forderedit'} ...
                   {'Style' 'pushbutton' 'String' 'Estimate' 'Callback' {@comforder, wtypes, EEG.srate}} ...
+                  {} {'Style' 'checkbox', 'String', 'Use minimum-phase converted causal filter (non-linear!; beta)', 'Tag' 'minphase', 'Value', 0} ...
                   {'Style' 'edit' 'Tag' 'devedit' 'Visible' 'off'} ...
                   {} {} {'Style' 'pushbutton' 'String', 'Plot filter responses' 'Callback' {@comfresp, wtypes, ftypes, EEG.srate}}};
         result = inputgui(uigeom, uilist, 'pophelp(''pop_firws'')', 'Filter the data -- pop_firws()');
@@ -116,6 +121,7 @@ function [EEG, com, b] = pop_firws(EEG, varargin)
         if ~isempty(result{5})
             args = [args {'forder'} {str2double(result{5})}];
         end
+        args = [args {'minphase'} result{6}];
     else
         args = varargin;
     end
@@ -126,9 +132,19 @@ function [EEG, com, b] = pop_firws(EEG, varargin)
     c = parseargs(args, EEG.srate);
     b = firws(c{:});
 
+    % Check arguments
+    if ~isfield(args, 'minphase') || isempty(args.minphase)
+        args.minphase = 0;
+    end
+
     % Filter
     disp('pop_firws() - filtering the data');
-    EEG = firfilt(EEG, b);
+    if args.minphase
+        b = minphaserceps(b);
+        EEG = firfiltsplit(EEG, b, 1);
+    else
+        EEG = firfilt(EEG, b);
+    end
 
     % History string
     com = sprintf('%s = pop_firws(%s', inputname(1), inputname(1));
@@ -199,8 +215,13 @@ function comfresp(obj, evt, wtypes, ftypes, srate)
     args.wtype = wtypes{get(findobj(gcbf, 'Tag', 'wtypepop'), 'Value')};
     args.warg = str2num(get(findobj(gcbf, 'Tag', 'wargedit'), 'String'));
     args.forder = str2double(get(findobj(gcbf, 'Tag', 'forderedit'), 'String'));
+    args.minphase = get(findobj(gcbf, 'Tag', 'minphase'), 'Value');
+    causal = args.minphase;
     c = parseargs(args, srate);
     b = firws(c{:});
+    if args.minphase
+        b = minphaserceps(b);
+    end
     H = findobj('Tag', 'filter responses', 'type', 'figure');
     if ~isempty(H)
         figure(H);
@@ -208,4 +229,4 @@ function comfresp(obj, evt, wtypes, ftypes, srate)
         H = figure;
         set(H, 'color', [.93 .96 1], 'Tag', 'filter responses');
     end
-    plotfresp(b, 1, [], srate);
+    plotfresp(b, 1, [], srate, causal);

@@ -3,7 +3,7 @@
 % Usage:
 %   >> [EEG, com, b] = pop_eegfiltnew(EEG); % pop-up window mode
 %   >> [EEG, com, b] = pop_eegfiltnew(EEG, locutoff, hicutoff, filtorder,
-%                                     revfilt, usefft, plotfreqz);
+%                                     revfilt, usefft, plotfreqz, minphase);
 %
 % Inputs:
 %   EEG       - EEGLAB EEG structure
@@ -19,6 +19,8 @@
 %   usefft    - ignored (backward compatibility only)
 %   plotfreqz - [0|1] plot filter's frequency and phase response
 %               {default 0} 
+%   minphase  - scalar boolean minimum-phase converted causal filter
+%               {default false}
 %
 % Outputs:
 %   EEG       - filtered EEGLAB EEG structure
@@ -59,7 +61,7 @@
 % along with this program; if not, write to the Free Software
 % Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-function [EEG, com, b] = pop_eegfiltnew(EEG, locutoff, hicutoff, filtorder, revfilt, usefft, plotfreqz)
+function [EEG, com, b] = pop_eegfiltnew(EEG, locutoff, hicutoff, filtorder, revfilt, usefft, plotfreqz, minphase)
 
 com = '';
 
@@ -74,8 +76,8 @@ end
 % GUI
 if nargin < 2
 
-    geometry = {[3, 1], [3, 1], [3, 1], 1, 1, 1};
-    geomvert = [1 1 1 2 1 1];
+    geometry = {[3, 1], [3, 1], [3, 1], 1, 1, 1, 1};
+    geomvert = [1 1 1 2 1 1 1];
 
     uilist = {{'style', 'text', 'string', 'Lower edge of the frequency pass band (Hz)'} ...
               {'style', 'edit', 'string', ''} ...
@@ -85,6 +87,7 @@ if nargin < 2
               {'style', 'edit', 'string', ''} ...
               {'style', 'text', 'string', {'*See help text for a description of the default filter order heuristic.', 'Manual definition is recommended.'}} ...
               {'style', 'checkbox', 'string', 'Notch filter the data instead of pass band', 'value', 0} ...
+              {'Style', 'checkbox', 'String', 'Use minimum-phase converted causal filter (non-linear!; beta)', 'Value', 0} ...
               {'style', 'checkbox', 'string', 'Plot frequency response', 'value', 1}};
 
     result = inputgui('geometry', geometry, 'geomvert', geomvert, 'uilist', uilist, 'title', 'Filter the data -- pop_eegfiltnew()', 'helpcom', 'pophelp(''pop_eegfiltnew'')');
@@ -95,7 +98,8 @@ if nargin < 2
     hicutoff = str2num(result{2});
     filtorder = str2num(result{3});
     revfilt = result{4};
-    plotfreqz = result{5};
+    minphase = result{5};
+    plotfreqz = result{6};
     usefft = [];
 
 else
@@ -114,8 +118,11 @@ else
     elseif usefft == 1
         error('FFT filtering not supported. Argument is provided for backward compatibility in command line mode only.')
     end
-    if nargin < 7
+    if nargin < 7 || isempty(plotfreqz)
         plotfreqz = 0;
+    end
+    if nargin < 8 || isempty(minphase)
+        minphase = 0;
     end
     
 end
@@ -201,14 +208,25 @@ else
     b = firws(filtorder, cutoffArray / fNyquist, winArray);
 end
 
+if minphase
+    disp('pop_eegfiltnew() - converting filter to minimum-phase (non-linear!)');
+    b = minphaserceps(b);
+end
+
 % Plot frequency response
 if plotfreqz
     freqz(b, 1, 8192, EEG.srate);
 end
 
 % Filter
-disp('pop_eegfiltnew() - filtering the data');
-EEG = firfilt(EEG, b);
+if minphase
+    disp('pop_eegfiltnew() - filtering the data (causal)');
+    EEG = firfiltsplit(EEG, b, 1);
+else
+    disp('pop_eegfiltnew() - filtering the data (zero-phase)');
+    EEG = firfilt(EEG, b);
+end
+
 
 % History string
 com = sprintf('%s = pop_eegfiltnew(%s, %s, %s, %s, %s, %s, %s);', inputname(1), inputname(1), mat2str(locutoff), mat2str(hicutoff), mat2str(filtorder), mat2str(revfilt), mat2str(usefft), mat2str(plotfreqz));

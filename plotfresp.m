@@ -36,58 +36,68 @@
 % along with this program; if not, write to the Free Software
 % Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-function plotfresp(b, a, n, fs)
+function plotfresp(b, a, nfft, fs, causal)
 
-if nargin < 4
+if nargin < 5 || isempty(causal)
+    causal = 0;
+end
+if nargin < 4  || isempty(fs)
     fs = 1;
 end
-if nargin < 3 || isempty(n)
-    n = 2^fix(log2(length(b)));
-    if n < 512
-        n = 512;
+if nargin < 3 || isempty(nfft)
+    nfft = 2^fix(log2(length(b)));
+    if nfft < 512
+        nfft = 512;
     end
 end
 if nargin < 1
     error('Not enough input arguments.');
 end
 
+n = length(b);
+f = (0:1 / nfft:1) * fs / 2;
+
 % Impulse resonse
+if causal, xval = 0:n-1; else xval = -(n - 1) / 2:(n - 1) / 2; end
 ax(1) = subplot(2, 3, 1);
-stem(b, 'fill')
+stem(xval, b, 'fill')
 title('Impulse response');
 ylabel('Amplitude');
 
 % Step response
 ax(4) = subplot(2, 3, 4);
-stem(cumsum(b), 'fill');
+stem(xval, cumsum(b), 'fill');
 title('Step response');
 foo = ylim;
 if foo(2) < -foo(1) + 1;
     foo(2) = -foo(1) + 1;
     ylim(foo);
 end
+xMin = []; xMax = [];
 children = get(ax(4), 'Children');
 for child =1:length(children)
-    children(child) = length(get(children(child), 'xdata'));
+    xData = get(children(child), 'XData');
+    xMin = min([xMin min(xData)]);
+    xMax = max([xMax max(xData)]);
 end
-set(ax([1 4]), 'xlim', [1 max(children)]);
+set(ax([1 4]), 'xlim', [xMin xMax]);
 ylabel('Amplitude');
 
 % Frequency response
 ax(2) = subplot(2, 3, 2);
 m = fix((length(b) - 1) / 2); % Filter order
-z = fft(b, n * 2);
+z = fft(b, nfft * 2);
 z = z(1:fix(length(z) / 2) + 1);
-foo = real(abs(z) .* exp(-i * (angle(z) + [0:1 / n:1] * m * pi))); % needs further testing
-plot([0:1 / n:1] * fs / 2, foo);
+% foo = real(abs(z) .* exp(-i * (angle(z) + [0:1 / nfft:1] * m * pi))); % needs further testing
+plot(f, abs(z));
 title('Frequency response');
 ylabel('Amplitude');
 
 % Magnitude response
 ax(5) = subplot(2, 3, 5);
 db = abs(z);
-db(find(db < eps^(2 / 3))) = eps^(2 / 3); % Log of zero warning
-plot([0:1/n:1] * fs / 2, 20 * log10(db));
+db(db < eps^(2 / 3)) = eps^(2 / 3); % Log of zero warning
+plot(f, 20 * log10(db));
 title('Magnitude response');
 foo = ylim;
 if foo(1) < 20 * log10(eps^(2 / 3))
@@ -98,15 +108,19 @@ ylim(foo);
 
 % Phase response
 ax(3) = subplot(2, 3, 3);
-z(find(abs(z) < eps^(2 / 3))) = NaN; % Phase is undefined for magnitude zero
+z(abs(z) < eps^(2 / 3)) = NaN; % Phase is undefined for magnitude zero
 phi = angle(z);
-groupdelay = -mod([0:1 / n:1] * m * pi + pi, 2 * pi) + pi; % Group delay
-phi = phi - groupdelay;
-phi = phi + 2 * pi * (phi <= -pi + eps ^ (1/3)); % Unwrap
-plot([0:1/n:1] * fs / 2, phi);
+if causal
+    phi = unwrap(phi);
+else
+    delay = -mod((0:1 / nfft:1) * m * pi + pi, 2 * pi) + pi; % Zero-phase
+    phi = phi - delay;
+    phi = phi + 2 * pi * (phi <= -pi + eps ^ (1/3)); % Unwrap
+end
+plot(f, phi);
 title('Phase response');
 ylabel('Phase (rad)');
-ylim([-pi / 2 1.5 * pi]);
+% ylim([-pi / 2 1.5 * pi]);
 
 set(ax(1:5), 'ygrid', 'on', 'xgrid', 'on', 'box', 'on');
 titles = get(ax(1:5), 'title');
