@@ -1,3 +1,7 @@
+Version 2.0
+- ENH: usefftfilt option for frequency domain filtering (faster for very high filter orders)
+- CHG: sync existing low level functions to Fieldtrip (windows, fir_filterdcpadded, firws, plotfresp, minphaserceps) and move to private subdir
+
 Version 1.6.1
 - ENH: documentation improvements for pop_firws GUI and pop_firpmord help text
 

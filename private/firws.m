@@ -20,8 +20,8 @@
 %   b - filter coefficients
 %
 % Example:
-%   fs = 500; cutoff = 0.5; tbw = 1;
-%   m  = pop_firwsord('hamming', fs, tbw);
+%   fs = 500; cutoff = 0.5; df = 1;
+%   m  = firwsord('hamming', fs, df);
 %   b  = firws(m, cutoff / (fs / 2), 'high', windows('hamming', m + 1)); 
 %
 % References:
@@ -32,7 +32,7 @@
 % Author: Andreas Widmann, University of Leipzig, 2005
 %
 % See also:
-%   pop_firws, pop_firwsord, pop_kaiserbeta, windows
+%   firwsord, invfirwsord, kaiserbeta, windows
 
 %123456789012345678901234567890123456789012345678901234567890123456789012
 
@@ -51,8 +51,10 @@
 % You should have received a copy of the GNU General Public License
 % along with this program; if not, write to the Free Software
 % Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+%
+% $Id$
 
-function [b a] = firws(m, f, t, w)
+function [b, a] = firws(m, f, t, w)
 
     a = 1;
 
