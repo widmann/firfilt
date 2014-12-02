@@ -13,14 +13,14 @@
 %   EEG           - EEGLAB EEG structure
 %
 % Note:
-%   This function is (in combination with firfiltdcpadded) just a
+%   This function is (in combination with fir_filterdcpadded) just a
 %   non-memory optimized version of the firfilt function allowing causal
 %   filtering. Will possibly replace firfilt in the future.
 %
 % Author: Andreas Widmann, University of Leipzig, 2013
 %
 % See also:
-%   firfiltdcpadded, findboundaries
+%   fir_filterdcpadded, findboundaries
 
 %123456789012345678901234567890123456789012345678901234567890123456789012
 
@@ -40,8 +40,12 @@
 % along with this program; if not, write to the Free Software
 % Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-function EEG = firfiltsplit(EEG, b, causal)
+function EEG = firfiltsplit(EEG, b, causal, usefftfilt)
 
+% Defaults
+if nargin < 4 || isempty(usefftfilt)
+    usefftfilt = 0;
+end
 if nargin < 3 || isempty(causal)
     causal = 0;
 end
@@ -61,7 +65,7 @@ end
 for iDc = 1:(length(dcArray) - 1)
 
     % Filter segment
-    EEG.data(:, dcArray(iDc):dcArray(iDc + 1) - 1) = firfiltdcpadded(b, EEG.data(:, dcArray(iDc):dcArray(iDc + 1) - 1)', causal)';
+    EEG.data(:, dcArray(iDc):dcArray(iDc + 1) - 1) = fir_filterdcpadded(b, 1, EEG.data(:, dcArray(iDc):dcArray(iDc + 1) - 1)', causal, usefftfilt)';
 
 end
 

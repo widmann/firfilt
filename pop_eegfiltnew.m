@@ -13,14 +13,16 @@
 %               {[]/0 -> highpass}
 %
 % Optional inputs:
-%   filtorder - filter order (filter length - 1). Mandatory even
-%   revfilt   - [0|1] invert filter (from bandpass to notch filter)
-%               {default 0 (bandpass)}
-%   usefft    - ignored (backward compatibility only)
-%   plotfreqz - [0|1] plot filter's frequency and phase response
-%               {default 0} 
-%   minphase  - scalar boolean minimum-phase converted causal filter
-%               {default false}
+%   filtorder     - filter order (filter length - 1). Mandatory even
+%   revfilt       - [0|1] invert filter (from bandpass to notch filter)
+%                   {default 0 (bandpass)}
+%   usefft        - ignored (backward compatibility only)
+%   plotfreqz     - [0|1] plot filter's frequency and phase response
+%                   {default 0} 
+%   minphase      - scalar boolean minimum-phase converted causal filter
+%                   {default false}
+%   usefftfilt    - scalar boolean use fftfilt frequency domain filtering
+%                   {default false}
 %
 % Outputs:
 %   EEG       - filtered EEGLAB EEG structure
@@ -61,7 +63,7 @@
 % along with this program; if not, write to the Free Software
 % Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-function [EEG, com, b] = pop_eegfiltnew(EEG, locutoff, hicutoff, filtorder, revfilt, usefft, plotfreqz, minphase)
+function [EEG, com, b] = pop_eegfiltnew(EEG, locutoff, hicutoff, filtorder, revfilt, usefft, plotfreqz, minphase, usefftfilt)
 
 com = '';
 
@@ -101,6 +103,7 @@ if nargin < 2
     minphase = result{5};
     plotfreqz = result{6};
     usefft = [];
+    usefftfilt = 0;
 
 else
     
@@ -124,6 +127,10 @@ else
     if nargin < 8 || isempty(minphase)
         minphase = 0;
     end
+    if nargin < 9 || isempty(usefftfilt)
+        usefftfilt = 0;
+    end
+
     
 end
 
@@ -211,6 +218,9 @@ end
 if minphase
     disp('pop_eegfiltnew() - converting filter to minimum-phase (non-linear!)');
     b = minphaserceps(b);
+    causal = 1;
+else
+    causal = 0;
 end
 
 % Plot frequency response
@@ -219,9 +229,9 @@ if plotfreqz
 end
 
 % Filter
-if minphase
+if minphase || usefftfilt
     disp('pop_eegfiltnew() - filtering the data (causal)');
-    EEG = firfiltsplit(EEG, b, 1);
+    EEG = firfiltsplit(EEG, b, causal, usefftfilt);
 else
     disp('pop_eegfiltnew() - filtering the data (zero-phase)');
     EEG = firfilt(EEG, b);
