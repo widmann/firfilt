@@ -1,3 +1,6 @@
+Version 1.6.1
+- ENH: documentation improvements for pop_firws GUI and pop_firpmord help text
+
 Version 1.6
 - ENH: minimum-phase conversion and causal filtering
 
