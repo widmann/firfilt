@@ -19,7 +19,7 @@
 % Author: Andreas Widmann, University of Leipzig, 2005
 %
 % See also:
-%   pop_firws, firws, pop_firwsord, windows
+%   kaiserbeta, pop_firws, firws, pop_firwsord, windows
 
 %123456789012345678901234567890123456789012345678901234567890123456789012
 
@@ -56,14 +56,7 @@ function [beta, dev] = pop_kaiserbeta(dev)
             error('Not enough input arguments.');
         end
     end
-
-    devdb = -20 * log10(dev);
-    if devdb > 50
-        beta = 0.1102 * (devdb - 8.7);
-    elseif devdb >= 21
-        beta = 0.5842 * (devdb - 21)^0.4 + 0.07886 * (devdb - 21);
-    else
-        beta = 0;
-    end
+    
+    [ beta ] = kaiserbeta( dev );
 
 end
