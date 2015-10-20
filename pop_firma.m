@@ -93,11 +93,11 @@ function complot(obj, evt, srate)
         error('Not enough input arguments');
     end
     b = ones(1, args.forder + 1) / (args.forder + 1);
-    H = findobj('tag', 'filter responses', 'type', 'figure');
+    H = findobj('tag', 'plotfiltresp', 'type', 'figure');
     if ~isempty(H)
         figure(H);
     else
         H = figure;
-        set(H, 'color', [.93 .96 1], 'tag', 'filter responses');
+        set(H, 'color', [.93 .96 1], 'tag', 'plotfiltresp');
     end
-    plotfresp(b, 1, [], srate);
+    plotfresp(b, 1, [], srate, 'onepass-zerophase');
