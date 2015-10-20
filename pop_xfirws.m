@@ -15,9 +15,8 @@
 %   'ftype'       - char array filter type. 'bandpass', 'highpass',
 %                   'lowpass', or 'bandstop' {default 'bandpass' or
 %                   'lowpass', depending on number of cutoff frequencies}
-%   'wtype'       - char array window type. 'rectangular', 'bartlett',
-%                   'hann', 'hamming', 'blackman', or 'kaiser' {default
-%                   'blackman'} 
+%   'wtype'       - char array window type. 'rectangular', 'hann',
+%                   'hamming', 'blackman', or 'kaiser' {default 'hamming'} 
 %   'warg'        - scalar kaiser beta
 %   'filename'    - char array export filename
 %   'pathname'    - char array export pathname {default '.'}
@@ -40,14 +39,12 @@
 %                       attenuation     deviation       ripple (dB)     (normalized freq)   (normalized rad freq)
 %                       (dB)
 %   Rectangular         -21             0.0891          1.552           0.9 / m*             4 * pi / m
-%   Bartlett            -25             0.0562          0.977           (2.9** / m)          8 * pi / m
 %   Hann                -44             0.0063          0.109           3.1 / m              8 * pi / m
 %   Hamming             -53             0.0022          0.038           3.3 / m              8 * pi / m
 %   Blackman            -74             0.0002          0.003           5.5 / m             12 * pi / m
 %   Kaiser      5.653   -60             0.001           0.017           3.6 / m
 %   Kaiser      7.857   -80             0.0001          0.002           5.0 / m
 %   * m = filter order
-%   ** estimate for higher m only
 %
 % Example:
 %   fs = 500; tbw = 2; dev = 0.001;
@@ -85,7 +82,7 @@ if nargin < 1
 
     drawnow;
     ftypes = {'bandpass' 'highpass' 'lowpass' 'bandstop'};
-    wtypes = {'rectangular' 'bartlett' 'hann' 'hamming' 'blackman' 'kaiser'};
+    wtypes = {'rectangular' 'hann' 'hamming' 'blackman' 'kaiser'};
     uigeom = {[1 0.75 0.75] 1 [1 0.75 0.75] [1 0.75 0.75] 1 [1 0.75 0.75] [1 0.75 0.75] [1 0.75 0.75] 1 [1 0.75 0.75]};
     uilist = {{'Style' 'text' 'String' 'Sampling frequency (Hz):'} ...
               {'Style' 'edit' 'String' '2' 'Tag' 'srateedit'} {} ...
@@ -96,7 +93,7 @@ if nargin < 1
               {'Style' 'popupmenu' 'String' ftypes 'Tag' 'ftypepop'} {} ...
               {} ...
               {'Style' 'text' 'String' 'Window type:'} ...
-              {'Style' 'popupmenu' 'String' wtypes 'Tag' 'wtypepop' 'Value' 5 'Callback' 'temp = {''off'', ''on''}; set(findobj(gcbf, ''-regexp'', ''Tag'', ''^warg''), ''Enable'', temp{double(get(gcbo, ''Value'') == 6) + 1}), set(findobj(gcbf, ''Tag'', ''wargedit''), ''String'', '''')'} {} ...
+              {'Style' 'popupmenu' 'String' wtypes 'Tag' 'wtypepop' 'Value' 3 'Callback' 'temp = {''off'', ''on''}; set(findobj(gcbf, ''-regexp'', ''Tag'', ''^warg''), ''Enable'', temp{double(get(gcbo, ''Value'') == 6) + 1}), set(findobj(gcbf, ''Tag'', ''wargedit''), ''String'', '''')'} {} ...
               {'Style' 'text' 'String' 'Kaiser window beta:' 'Tag' 'wargtext' 'Enable' 'off'} ...
               {'Style' 'edit' 'String' '' 'Tag' 'wargedit' 'Enable' 'off'} ...
               {'Style' 'pushbutton' 'String' 'Estimate' 'Tag' 'wargpush' 'Enable' 'off' 'Callback' @comwarg} ...
@@ -158,7 +155,7 @@ end
 
 % Window type
 if ~isfield(Arg, 'wtype') || isempty(Arg.wtype) % Use default
-    Arg.wtype = 'blackman';
+    Arg.wtype = 'hamming';
 end
 
 % Window parameter
@@ -239,11 +236,11 @@ function comfresp(obj, evt, wtypes, ftypes)
     xfirwsArgArray(1, :) = fieldnames(Arg);
     xfirwsArgArray(2, :) = struct2cell(Arg);
     [b a] = pop_xfirws(xfirwsArgArray{:});
-    H = findobj('Tag', 'filter responses', 'type', 'figure');
+    H = findobj('Tag', 'plotfiltresp', 'type', 'figure');
     if ~isempty(H)
         figure(H);
     else
         H = figure;
-        set(H, 'color', [.93 .96 1], 'Tag', 'filter responses');
+        set(H, 'color', [.93 .96 1], 'Tag', 'plotfiltresp');
     end
-    plotfresp(b, a, [], Arg.srate);
+    plotfresp(b, a, [], Arg.srate, 'onepass-zerophase');
