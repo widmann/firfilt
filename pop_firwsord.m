@@ -7,8 +7,8 @@
 %   >> m = pop_firwsord('kaiser', fs, df, dev);
 %
 % Inputs:
-%   wtype - char array window type. 'rectangular', 'bartlett', 'hann',
-%           'hamming', {'blackman'}, or 'kaiser'
+%   wtype - char array window type. 'rectangular', 'hann', 'hamming',
+%           'blackman', or 'kaiser' {default 'hamming'}
 %   fs    - scalar sampling frequency {default 2}
 %   df    - scalar requested transition band width
 %   dev   - scalar maximum passband deviation/ripple (Kaiser window
@@ -31,7 +31,7 @@
 % Author: Andreas Widmann, University of Leipzig, 2005
 %
 % See also:
-%   pop_firws, firws, pop_kaiserbeta, windows
+%   firwsord, pop_firws, firws, pop_kaiserbeta, windows
 
 %123456789012345678901234567890123456789012345678901234567890123456789012
 
@@ -55,11 +55,11 @@ function [m, dev] = pop_firwsord(wtype, fs, df, dev)
 
     m = [];
 
-    wtypes = {'rectangular' 'bartlett' 'hann' 'hamming' 'blackman' 'kaiser'};
+    wtypes = {'rectangular' 'hann' 'hamming' 'blackman' 'kaiser'};
 
     % Window type
     if nargin < 1 || isempty(wtype)
-        wtype = 5;
+        wtype = 3;
     elseif ~ischar(wtype) || isempty(strmatch(wtype, wtypes))
         error('Unknown window type');
     else
@@ -78,12 +78,12 @@ function [m, dev] = pop_firwsord(wtype, fs, df, dev)
 
     % Maximum passband deviation/ripple
     if nargin < 4 || isempty(dev)
-        devs = {0.089 0.056 0.0063 0.0022 0.0002 []};
+        devs = {0.089 0.0063 0.0022 0.0002 []};
         dev = devs{wtype};
     end
 
     % GUI
-    if nargin < 3 || isempty(df) || (wtype == 6 && isempty(dev))
+    if nargin < 3 || isempty(df) || (wtype == 5 && isempty(dev))
         drawnow;
         uigeom = {[1 1] [1 1] [1 1] [1 1]};
         uilist = {{'style' 'text' 'string' 'Sampling frequency:'} ...
@@ -110,7 +110,7 @@ function [m, dev] = pop_firwsord(wtype, fs, df, dev)
         end
         if ~isempty(result{4})
             dev = str2num(result{4});
-        elseif wtype == 6
+        elseif wtype == 5
             error('Not enough input arguments.');
         end
     end
@@ -122,24 +122,12 @@ function [m, dev] = pop_firwsord(wtype, fs, df, dev)
         error('Transition bandwidth must be a positive real scalar.');
     end
 
-    df = df / fs; % Normalize transition band width
-
-    if wtype == 6
-        if length(dev) > 1 || ~isnumeric(dev) || ~isreal(dev) || dev <= 0
-            error('Passband deviation/ripple must be a positive real scalar.');
-        end
-        devdb = -20 * log10(dev);
-        m = 1 + (devdb - 8) / (2.285 * 2 * pi * df);
-    else
-        dfs = [0.9 2.9 3.1 3.3 5.5];
-        m = dfs(wtype) / df;
-    end
-
-    m = ceil(m / 2) * 2; % Make filter order even (type 1)
+    % Compute filter order with low-level firwsord
+    [ m, dev ] = firwsord( wtypes{ wtype }, fs, df, dev );
 
 function comwtype(obj, evt, dev)
-    enable = {'off' 'off' 'off' 'off' 'off' 'on'};
-    devs = {0.089 0.056 0.0063 0.0022 0.0002 dev};
+    enable = {'off' 'off' 'off' 'off' 'on'};
+    devs = {0.089 0.0063 0.0022 0.0002 dev};
     wtype = get(findobj(gcbf, 'tag', 'wtypepop'), 'value');
     set(findobj(gcbf, 'tag', 'devtext'), 'enable', enable{wtype});
     set(findobj(gcbf, 'tag', 'devedit'), 'enable', enable{wtype}, 'string', devs{wtype});
