@@ -2,8 +2,9 @@
 %
 % Usage:
 %   >> [EEG, com, b] = pop_eegfiltnew(EEG); % pop-up window mode
-%   >> [EEG, com, b] = pop_eegfiltnew(EEG, locutoff, hicutoff, filtorder,
-%                                     revfilt, usefft, plotfreqz, minphase);
+%   >> [EEG, com, b] = pop_eegfiltnew(EEG, locutoff, hicutoff, ...
+%                                     filtorder, revfilt, usefft, ... 
+%                                     plotfreqz, minphase, usefftfilt);
 %
 % Inputs:
 %   EEG       - EEGLAB EEG structure
@@ -219,8 +220,10 @@ if minphase
     disp('pop_eegfiltnew() - converting filter to minimum-phase (non-linear!)');
     b = minphaserceps(b);
     causal = 1;
+    dir = '(causal)';
 else
     causal = 0;
+    dir = '(zero-phase, non-causal)';
 end
 
 % Plot frequency response
@@ -230,10 +233,10 @@ end
 
 % Filter
 if minphase || usefftfilt
-    disp('pop_eegfiltnew() - filtering the data (causal)');
+    disp(['pop_eegfiltnew() - filtering the data ' dir]);
     EEG = firfiltsplit(EEG, b, causal, usefftfilt);
 else
-    disp('pop_eegfiltnew() - filtering the data (zero-phase)');
+    disp(['pop_eegfiltnew() - filtering the data ' dir]);
     EEG = firfilt(EEG, b);
 end
 
