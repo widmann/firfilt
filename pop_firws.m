@@ -14,14 +14,14 @@
 %   'ftype'       - char array filter type. 'bandpass', 'highpass',
 %                   'lowpass', or 'bandstop' {default 'bandpass' or
 %                   'lowpass', depending on number of cutoff frequencies}
-%   'wtype'       - char array window type. 'rectangular', 'bartlett',
-%                   'hann', 'hamming', 'blackman', or 'kaiser' {default
-%                   'blackman'} 
+%   'wtype'       - char array window type. 'rectangular', 'hann',
+%                   'hamming', 'blackman', or 'kaiser' {default 'hamming'} 
 %   'warg'        - scalar kaiser beta
 %   'minphase'    - scalar boolean minimum-phase converted causal filter
 %                   {default false}
 %   'usefftfilt'  - scalar boolean use fftfilt frequency domain filtering
 %                   {default false}
+%   'plotfresp'   - scalar boolean plot filter responses {default false}
 %
 % Outputs:
 %   EEG       - filtered EEGLAB EEG structure
@@ -45,7 +45,6 @@
 %                       attenuation     deviation       ripple (dB)     (normalized freq)   (normalized rad freq)
 %                       (dB)
 %   Rectangular         -21             0.0891          1.552           0.9 / m*             4 * pi / m
-%   Bartlett            -25             0.0562          0.977                                8 * pi / m
 %   Hann                -44             0.0063          0.109           3.1 / m              8 * pi / m
 %   Hamming             -53             0.0022          0.038           3.3 / m              8 * pi / m
 %   Blackman            -74             0.0002          0.003           5.5 / m             12 * pi / m
@@ -91,23 +90,24 @@ function [EEG, com, b] = pop_firws(EEG, varargin)
         drawnow;
         ftypes = {'bandpass', 'highpass', 'lowpass', 'bandstop'};
         ftypesStr = {'Bandpass', 'Highpass', 'Lowpass', 'Bandstop'};
-        wtypes = {'rectangular', 'bartlett', 'hann', 'hamming', 'blackman', 'kaiser'};
-        wtypesStr = {'Rectangular (PB dev=0.089, SB att=-21dB)', 'Bartlett (PB dev=0.056, SB att=-25dB)', 'Hann (PB dev=0.006, SB att=-44dB)', 'Hamming (PB dev=0.002, SB att=-53dB)', 'Blackman (PB dev=0.0002, SB att=-74dB)', 'Kaiser'};
-        uigeom = {[1 0.75 0.75] [1 0.75 0.75] 1 [1 0.75 0.75] [1 0.75 0.75] [1 0.75 0.75] [1 1.5] 1 [1 0.75 0.75]};
+        wtypes = {'rectangular', 'hann', 'hamming', 'blackman', 'kaiser'};
+        wtypesStr = {'Rectangular (PB dev=0.089, SB att=-21dB)', 'Hann (PB dev=0.006, SB att=-44dB)', 'Hamming (PB dev=0.002, SB att=-53dB)', 'Blackman (PB dev=0.0002, SB att=-74dB)', 'Kaiser'};
+        uigeom = {[1 0.75 0.75] [1 0.75 0.75] 1 [1 0.75 0.75] [1 0.75 0.75] [1 0.75 0.75] [1 1.5] [1 1.5] 1 [1 0.75 0.75]};
         uilist = {{'Style' 'text' 'String' 'Cutoff frequency(ies) [hp lp] (-6 dB; Hz):'} ...
                   {'Style' 'edit' 'String' '' 'Tag' 'fcutoffedit'} {} ...
                   {'Style' 'text' 'String' 'Filter type:'} ...
                   {'Style' 'popupmenu' 'String' ftypesStr 'Tag' 'ftypepop'} {} ...
                   {} ...
                   {'Style' 'text' 'String' 'Window type:'} ...
-                  {'Style' 'popupmenu' 'String' wtypesStr 'Tag' 'wtypepop' 'Value' 5 'Callback' 'temp = {''off'', ''on''}; set(findobj(gcbf, ''-regexp'', ''Tag'', ''^warg''), ''Enable'', temp{double(get(gcbo, ''Value'') == 6) + 1}), set(findobj(gcbf, ''Tag'', ''wargedit''), ''String'', '''')'} {} ...
+                  {'Style' 'popupmenu' 'String' wtypesStr 'Tag' 'wtypepop' 'Value' 3 'Callback' 'temp = {''off'', ''on''}; set(findobj(gcbf, ''-regexp'', ''Tag'', ''^warg''), ''Enable'', temp{double(get(gcbo, ''Value'') == 5) + 1}), set(findobj(gcbf, ''Tag'', ''wargedit''), ''String'', '''')'} {} ...
                   {'Style' 'text' 'String' 'Kaiser window beta:' 'Tag' 'wargtext' 'Enable' 'off'} ...
                   {'Style' 'edit' 'String' '' 'Tag' 'wargedit' 'Enable' 'off'} ...
                   {'Style' 'pushbutton' 'String' 'Estimate' 'Tag' 'wargpush' 'Enable' 'off' 'Callback' @comwarg} ...
                   {'Style' 'text' 'String' 'Filter order (mandatory even):'} ...
                   {'Style' 'edit' 'String' '' 'Tag' 'forderedit'} ...
                   {'Style' 'pushbutton' 'String' 'Estimate' 'Callback' {@comforder, wtypes, EEG.srate}} ...
-                  {} {'Style' 'checkbox', 'String', 'Use minimum-phase converted causal filter (non-linear!; beta)', 'Tag' 'minphase', 'Value', 0} ...
+                  {} {'Style' 'checkbox', 'String', 'Use minimum-phase converted causal filter (non-linear!)', 'Tag' 'minphase', 'Value', 0} ...
+                  {} {'Style' 'checkbox', 'String', 'Use frequency domain filtering (faster for high filter orders > ~2000)', 'Tag' 'usefftfilt', 'Value', 0} ...
                   {'Style' 'edit' 'Tag' 'devedit' 'Visible' 'off'} ...
                   {} {} {'Style' 'pushbutton' 'String', 'Plot filter responses' 'Callback' {@comfresp, wtypes, ftypes, EEG.srate}}};
         result = inputgui(uigeom, uilist, 'pophelp(''pop_firws'')', 'Filter the data -- pop_firws()');
@@ -126,6 +126,7 @@ function [EEG, com, b] = pop_firws(EEG, varargin)
             Args = [Args {'forder'} {str2double(result{5})}];
         end
         Args = [Args {'minphase'} result{6}];
+        Args = [Args {'usefftfilt'} result{7}];
     else
         Args = varargin;
     end
@@ -136,16 +137,39 @@ function [EEG, com, b] = pop_firws(EEG, varargin)
     c = parseargs(Args, EEG.srate);
     b = firws(c{:});
 
-    % Check arguments
+    % Defaults
     if ~isfield(Args, 'minphase') || isempty(Args.minphase)
         Args.minphase = 0;
     end
     if ~isfield(Args, 'usefftfilt') || isempty(Args.usefftfilt)
         Args.usefftfilt = 0;
     end
+    if ~isfield(Args, 'plotfresp') || isempty(Args.plotfresp)
+        Args.plotfresp = 0;
+    end
+
+    % Prepare reporting
+    if ~isfield(Args, 'ftype') || isempty(Args.ftype)
+        if length(Args.fcutoff) == 1, ftype = 'lowpass'; else ftype = 'bandpass'; end
+    else
+        ftype = Args.ftype;
+    end
+    if Args.minphase, dir = 'onepass-minphase'; else dir = 'onepass-zerophase'; end
+    if ~isfield(Args, 'wtype') || isempty(Args.wtype), Args.wtype = 'hamming'; else wtype = Args.wtype; end
+    if strcmp(wtype, 'kaiser'), dev = invkaiserbeta(Args.warg); else dev = []; end
+    [df, dev] = invfirwsord(wtype, EEG.srate, Args.forder, dev);
+
+    % Check for low filter order and report
+    maxDf = min( [ Args.fcutoff * 2, ( EEG.srate / 2 - Args.fcutoff ) * 2, diff( sort( Args.fcutoff ) ) ] );
+    if df > maxDf
+        nOpt = firwsord(wtype, EEG.srate, maxDf, dev);
+        warning('firfilt:filterOrderLow', 'Filter order too low. For better results a minimum filter order of %d is recommended. Effective cutoff frequency might deviate from requested cutoff frequency.', nOpt)
+        firfiltreport('func', mfilename, 'family', [wtype '-windowed sinc FIR'], 'type', ftype, 'dir', dir, 'order', Args.forder)
+    else
+        firfiltreport('func', mfilename, 'family', [wtype '-windowed sinc FIR'], 'type', ftype, 'dir', dir, 'order', Args.forder, 'fs', EEG.srate, 'fc', Args.fcutoff, 'df', df, 'pbdev', dev, 'sbatt', dev)
+    end
 
     % Filter
-    disp('pop_firws() - filtering the data');
     if Args.minphase
         b = minphaserceps(b);
         Args.causal = 1;
@@ -158,6 +182,11 @@ function [EEG, com, b] = pop_firws(EEG, varargin)
         EEG = firfilt(EEG, b);
     end
 
+    % Plot filter responses
+    if Args.plotfresp
+        plotfresp(b, 1, [], EEG.srate, dir);
+    end
+    
     % History string
     com = sprintf('%s = pop_firws(%s', inputname(1), inputname(1));
     for c = fieldnames(Args)'
@@ -228,17 +257,19 @@ function comfresp(obj, evt, wtypes, ftypes, srate)
     Args.warg = str2num(get(findobj(gcbf, 'Tag', 'wargedit'), 'String'));
     Args.forder = str2double(get(findobj(gcbf, 'Tag', 'forderedit'), 'String'));
     Args.minphase = get(findobj(gcbf, 'Tag', 'minphase'), 'Value');
-    causal = Args.minphase;
     c = parseargs(Args, srate);
     b = firws(c{:});
     if Args.minphase
         b = minphaserceps(b);
+        dir = 'onepass-minphase';
+    else
+        dir = 'onepass-zerophase';
     end
-    H = findobj('Tag', 'filter responses', 'type', 'figure');
+    H = findobj('Tag', 'plotfiltresp', 'type', 'figure');
     if ~isempty(H)
         figure(H);
     else
         H = figure;
-        set(H, 'color', [.93 .96 1], 'Tag', 'filter responses');
+        set(H, 'color', [.93 .96 1], 'Tag', 'plotfiltresp');
     end
-    plotfresp(b, 1, [], srate, causal);
+    plotfresp(b, 1, [], srate, dir);
