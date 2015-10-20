@@ -3,11 +3,17 @@
 %
 % Usage:
 %   >> EEG = firfiltsplit(EEG, b);
+%   >> EEG = firfiltsplit(EEG, b, causal);
+%   >> EEG = firfiltsplit(EEG, b, causal, usefftfilt);
 %
 % Inputs:
 %   EEG           - EEGLAB EEG structure
 %   b             - vector of filter coefficients
-%   causal        - scalar boolean perform causal filtering {default 0}
+%
+% Optional inputs:
+%   causal        - scalar boolean perform causal filtering {default false}
+%   usefftfilt    - scalar boolean use fftfilt frequency domain filtering
+%                   {default false}
 %
 % Outputs:
 %   EEG           - EEGLAB EEG structure
