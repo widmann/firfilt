@@ -191,12 +191,12 @@ function comcb(obj, evt, ftypes, srate)
                 error('Not enough input arguments');
             end
             b = firpm(args.forder, c{:});
-            H = findobj('Tag', 'filter responses', 'Type', 'figure');
+            H = findobj('Tag', 'plotfiltresp', 'Type', 'figure');
             if ~isempty(H)
                 figure(H);
             else
                 H = figure;
-                set(H, 'color', [.93 .96 1], 'Tag', 'filter responses');
+                set(H, 'color', [.93 .96 1], 'Tag', 'plotfiltresp');
             end
-            plotfresp(b, 1, [], srate);
+            plotfresp(b, 1, [], srate, 'onepass-zerophase');
     end

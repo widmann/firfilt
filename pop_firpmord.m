@@ -52,7 +52,7 @@ m = [];
 wtpass = [];
 wtstop = [];
 
-if exist('firpmord') ~= 2
+if ~(exist('firpmord', 'file') == 2 || exist('firpmord', 'file') == 6)
    error('Requires the signal processing toolbox.');
 end
 
