@@ -31,7 +31,7 @@
 
 function vers = eegplugin_firfilt(fig, trystrs, catchstrs)
 
-    vers = 'firfilt1.6.1';
+    vers = 'firfilt2.0';
     if nargin < 3
         error('eegplugin_firfilt requires 3 arguments');
     end
