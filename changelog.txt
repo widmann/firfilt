@@ -66,4 +66,4 @@ Version 0.91
 - BUG: check for empty boundaries vector.
 
 Version 0.9
-starting, initial public release.
+- starting, initial public release.
