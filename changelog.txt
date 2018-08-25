@@ -1,3 +1,8 @@
+Version 2.1
+- ENH: allow channel selection
+- ENH: 'key', val parameters for function pop_eegfiltnew.m
+- BUG: prevent crash when signal processing toolbox absent
+
 Version 2.0
 - ENH: usefftfilt option for frequency domain filtering (faster for very high filter orders)
 - ENH: reporting of filter parameters for pop_firws

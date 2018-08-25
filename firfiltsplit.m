@@ -14,6 +14,7 @@
 %   causal        - scalar boolean perform causal filtering {default false}
 %   usefftfilt    - scalar boolean use fftfilt frequency domain filtering
 %                   {default false}
+%   chaninds      - channel indices {default all}
 %
 % Outputs:
 %   EEG           - EEGLAB EEG structure
@@ -46,7 +47,7 @@
 % along with this program; if not, write to the Free Software
 % Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-function EEG = firfiltsplit(EEG, b, causal, usefftfilt)
+function EEG = firfiltsplit(EEG, b, causal, usefftfilt, chaninds)
 
 % Defaults
 if nargin < 4 || isempty(usefftfilt)
@@ -54,6 +55,9 @@ if nargin < 4 || isempty(usefftfilt)
 end
 if nargin < 3 || isempty(causal)
     causal = 0;
+end
+if nargin < 4
+    chaninds = 1:size(EEG.data,1);
 end
 if nargin < 2
     error('Not enough input arguments.');
@@ -71,7 +75,7 @@ end
 for iDc = 1:(length(dcArray) - 1)
 
     % Filter segment
-    EEG.data(:, dcArray(iDc):dcArray(iDc + 1) - 1) = fir_filterdcpadded(b, 1, EEG.data(:, dcArray(iDc):dcArray(iDc + 1) - 1)', causal, usefftfilt)';
+    EEG.data(chaninds, dcArray(iDc):dcArray(iDc + 1) - 1) = fir_filterdcpadded(b, 1, EEG.data(chaninds, dcArray(iDc):dcArray(iDc + 1) - 1)', causal, usefftfilt)';
 
 end
 
