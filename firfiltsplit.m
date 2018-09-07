@@ -56,7 +56,7 @@ end
 if nargin < 3 || isempty(causal)
     causal = 0;
 end
-if nargin < 4
+if nargin < 5 || isempty( chaninds )
     chaninds = 1:size(EEG.data,1);
 end
 if nargin < 2
