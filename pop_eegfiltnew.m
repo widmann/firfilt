@@ -160,6 +160,7 @@ fieldlist = { 'locutoff'           'real'       []            [];
               'chantype'      {'cell' 'string'} []                {}  };
 g = finputcheck( options, fieldlist, 'pop_eegfiltnew');
 if ischar(g), error(g); end
+if isempty(g.minphase), g.minphase = 0; end
 if ~isempty(g.chantype) 
     g.channels = eeg_decodechan(EEG.chanlocs, g.chantype, 'type');
 elseif ~isempty(g.channels) 
