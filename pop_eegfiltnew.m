@@ -73,7 +73,7 @@ if nargin < 1
     help pop_eegfiltnew;
     return
 end
-if isempty(EEG.data)
+if isempty(EEG(1).data)
     error('Cannot filter empty dataset.');
 end
 
@@ -146,6 +146,17 @@ else
     options = varargin;
 end
 
+% process multiple datasets
+% -------------------------
+if length(EEG) > 1
+    if nargin < 2
+        [ EEG, com ] = eeg_eval( 'pop_eegfiltnew', EEG, 'warning', 'on', 'params', options );
+    else
+        [ EEG, com ] = eeg_eval( 'pop_eegfiltnew', EEG, 'params', options );
+    end
+    return;
+end
+
 % decode inputs
 % -------------
 fieldlist = { 'locutoff'           'real'       []            []; 
@@ -166,7 +177,7 @@ if ~isempty(g.chantype)
 elseif ~isempty(g.channels) 
     g.channels = eeg_decodechan(EEG.chanlocs, g.channels);
 else
-    g.channels = [1:EEG(1).nbchan];
+    g.channels = [1:EEG.nbchan];
 end
 if g.usefft
     error('FFT filtering not supported. Argument is provided for backward compatibility in command line mode only.')
