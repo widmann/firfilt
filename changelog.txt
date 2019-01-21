@@ -1,3 +1,6 @@
+Version 2.2
+- ENH: allow processing multiple datasets
+
 Version 2.1
 - ENH: allow channel selection
 - ENH: 'key', val parameters for function pop_eegfiltnew.m
