@@ -43,6 +43,7 @@
 %   and estimation of filter order by user defined transition band width.
 %
 % Author: Andreas Widmann, University of Leipzig, 2012
+%         Arnaud Delorme, UCSD, CNRS
 %
 % See also:
 %   firfilt, firws, windows
@@ -139,9 +140,29 @@ elseif ~ischar(varargin{1})
     if nargin > 2, options = { options{:} 'hicutoff'  varargin{2} }; end
     if nargin > 3, options = { options{:} 'filtorder' varargin{3} }; end
     if nargin > 4, options = { options{:} 'revfilt'   varargin{4} }; end
-    if nargin > 5, options = { options{:} 'minphase'  varargin{5} }; end
+    if nargin > 5, options = { options{:} 'usefft'    varargin{5} }; end
     if nargin > 6, options = { options{:} 'plotfreqz' varargin{6} }; end
-    if nargin > 7, options = { options{:} 'usefftfilt' varargin{7} }; end
+    if nargin > 7, options = { options{:} 'minphase'  varargin{7} }; end
+    if nargin > 8, options = { options{:} 'usefftfilt' varargin{8} }; end
+    
+    if nargin < 5 || isempty(revfilt)	
+        revfilt = 0;	
+    end	
+    if nargin < 6	
+        usefft = [];	
+    elseif usefft == 1	
+        error('FFT filtering not supported. Argument is provided for backward compatibility in command line mode only.')	
+    end	
+    if nargin < 7 || isempty(plotfreqz)	
+        plotfreqz = 0;	
+    end	
+    if nargin < 8 || isempty(minphase)	
+        minphase = 0;	
+    end	
+    if nargin < 9 || isempty(usefftfilt)	
+        usefftfilt = 0;	
+    end    
+    
 else
     options = varargin;
 end
