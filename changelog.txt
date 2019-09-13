@@ -1,3 +1,6 @@
+Version 2.4
+- BUG: new fix command line call for backward compatibility in pop_eegfiltnew.m
+
 Version 2.3
 - BUG: fix command line call for backward compatibility in pop_eegfiltnew.m
 
