@@ -279,7 +279,7 @@ end
 % Plot frequency response
 if g.plotfreqz
     try
-        freqz(b, 1, 8192, EEG.srate);
+        figure; freqz(b, 1, 8192, EEG.srate);
     catch
         warning( 'Plotting of frequency response requires signal processing toolbox.' )
     end
