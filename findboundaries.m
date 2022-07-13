@@ -32,10 +32,14 @@
 
 function boundaries = findboundaries(event)
 
-if isfield(event, 'type') & isfield(event, 'latency') & cellfun('isclass', {event.type}, 'char')
+if isfield(event, 'type') && isfield(event, 'latency')
 
     % Boundary event indices
-    boundaries = strmatch('boundary', {event.type});
+    if all(cellfun('isclass', {event.type}, 'char'))
+        boundaries = strmatch('boundary', {event.type});
+    else
+        boundaries = find([ event.type ] == -99);
+    end
 
     % Boundary event latencies
     boundaries = [event(boundaries).latency];
