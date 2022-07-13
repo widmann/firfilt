@@ -32,40 +32,31 @@
 
 function boundaries = findboundaries(event)
 
-if isempty(event) || ~isfield(event, 'type') || ~isfield(event, 'latency') 
+if isfield(event, 'type') && isfield(event, 'latency')
 
-    boundaries = 1;
-
-else
-    
-    if ischar(event(1).type)
-        % Boundary event indices
+    % Boundary event indices
+    if all(cellfun('isclass', {event.type}, 'char'))
         boundaries = strmatch('boundary', {event.type});
     else
-        eeglab_options;
-        if option_boundary99
-            boundaries = find( [ event.type ] == -99);
-        end
+        boundaries = find([ event.type ] == -99);
     end
 
-    if ~isempty(boundaries)
+    % Boundary event latencies
+    boundaries = [event(boundaries).latency];
 
-        % Boundary event latencies
-        boundaries = [event(boundaries).latency];
+    % Shift boundary events to epoch onset
+    boundaries = fix(boundaries + 0.5);
 
-        % Shift boundary events to epoch onset
-        boundaries = fix(boundaries + 0.5);
+    % Remove duplicate boundary events
+    boundaries = unique(boundaries);
 
-        % Remove duplicate boundary events
-        boundaries = unique(boundaries);
-
-        if boundaries(1) ~= 1 
-            boundaries = [ 1 boundaries ];
-        end
-    else
-
-        boundaries = 1;
-    
+    % Epoch onset at first sample?
+    if isempty(boundaries) || boundaries(1) ~= 1
+        boundaries = [1 boundaries];
     end
+
+else
+
+    boundaries = 1;
 
 end
