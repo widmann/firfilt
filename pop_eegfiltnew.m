@@ -3,18 +3,19 @@
 % Usage:
 %   >> [EEG, com, b] = pop_eegfiltnew(EEG); % pop-up window mode
 %   >> [EEG, com, b] = pop_eegfiltnew(EEG, 'key', val);
+% Legacy call:
 %   >> [EEG, com, b] = pop_eegfiltnew(EEG, locutoff, hicutoff, filtorder,
 %                                     revfilt, usefft, plotfreqz, minphase, 
 %                                     usefftfilt);
 %
 % Inputs:
 %   EEG       - EEGLAB EEG structure
-%   locutoff  - lower edge of the frequency pass band (Hz)
-%               {[]/0 -> lowpass} 
-%   hicutoff  - higher edge of the frequency pass band (Hz)
-%               {[]/0 -> highpass}
 %
 % Optional inputs:
+%   'locutoff'  - [float] lower edge of the frequency pass band (Hz)
+%               {[]/0 -> lowpass} 
+%   'hicutoff'  - [float] higher edge of the frequency pass band (Hz)
+%               {[]/0 -> highpass}
 %   'filtorder' - filter order (filter length - 1). Mandatory even
 %   'revfilt'   - [0|1] invert filter (from bandpass to notch filter)
 %               {default 0 (bandpass)}
