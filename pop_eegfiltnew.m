@@ -124,7 +124,7 @@ if nargin < 2
     options = {};
     if ~isempty(result{1}), options = { options{:} 'locutoff' str2num( result{1}) }; end
     if ~isempty(result{2}), options = { options{:} 'hicutoff' str2num( result{2}) }; end
-    if ~isempty(result{3}), options = { options{:} 'filtorder' result{3} }; end
+    if ~isempty(result{3}), options = { options{:} 'filtorder' str2num( result{3}) }; end
     if result{4}, options = { options{:} 'revfilt' result{4} }; end
     if result{5}, options = { options{:} 'minphase' result{5} }; end
     if result{6}, options = { options{:} 'plotfreqz' result{6} }; end
