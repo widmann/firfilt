@@ -239,7 +239,7 @@ else
     g.filtorderMin = ceil(3.3 ./ ((maxDf * 2) / EEG.srate) / 2) * 2;
     g.filtorderOpt = ceil(3.3 ./ (maxDf / EEG.srate) / 2) * 2;
     if g.filtorder < g.filtorderMin
-        error('Filter order too low. Minimum required filter order is %d. For better results a minimum filter order of %d is recommended.', g.filtorderMin, g.filtorderOpt)
+        error('Filter order too low. Minimum required filter order is %d.\nFor better results a minimum filter order of %d is recommended.', g.filtorderMin, g.filtorderOpt)
     elseif g.filtorder < g.filtorderOpt
         warning('firfilt:filterOrderLow', 'Transition band is wider than maximum stop-band width. For better results a minimum filter order of %d is recommended. Reported might deviate from effective -6dB cutoff frequency.', g.filtorderOpt)
     end
