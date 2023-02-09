@@ -67,6 +67,9 @@ if EEG.trials > 1 % Epoched data
     dcArray = 1 : EEG.pnts : EEG.pnts * (EEG.trials + 1);
 else % Continuous data
     dcArray = [findboundaries(EEG.event) EEG.pnts + 1];
+    if length(dcArray) > 2 && isequal(dcArray(end), dcArray(end-1))
+        dcArray(end) = [];
+    end
 end
 
 % Initialize progress indicator
