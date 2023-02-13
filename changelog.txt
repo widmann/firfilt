@@ -1,3 +1,6 @@
+Version 2.6.1
+- BUG: fixed handling of boundary events outside data range.
+
 Version 2.6
 - BUG: fixed filter order not converted to numeric by GUI.
 
