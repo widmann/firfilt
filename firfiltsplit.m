@@ -70,7 +70,7 @@ if EEG.trials > 1 % Epoched data
 else % Continuous data
     dcArray = findboundaries(EEG.event);
     dcArray = dcArray( dcArray >= 1 & dcArray <= EEG.pnts ); % Assert DC offset events are within data range
-    dcArray = [ dcArray EEG.pnts + 1 ];
+    if dcArray(end) < EEG.pnts, dcArray = [dcArray, EEG.pnts + 1];
 end
 
 % Loop over continuous segments
