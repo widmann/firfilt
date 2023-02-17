@@ -66,10 +66,9 @@ if EEG.trials > 1 % Epoched data
     EEG.data = reshape(EEG.data, [EEG.nbchan EEG.pnts * EEG.trials]);
     dcArray = 1 : EEG.pnts : EEG.pnts * (EEG.trials + 1);
 else % Continuous data
-    dcArray = [findboundaries(EEG.event) EEG.pnts + 1];
-    if length(dcArray) > 2 && isequal(dcArray(end), dcArray(end-1))
-        dcArray(end) = [];
-    end
+    dcArray = findboundaries(EEG.event);
+    dcArray = dcArray( dcArray >= 1 & dcArray <= EEG.pnts ); % Assert DC offset events are within data range
+    dcArray = [ dcArray EEG.pnts + 1 ];
 end
 
 % Initialize progress indicator
