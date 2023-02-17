@@ -11,3 +11,5 @@ if you used functions from the EEGLAB firfilt plugin in your manuscript.
 Version history
 ---------------
 v2.7 - handle better boundary events
+
+v2.7.1 - better handling of boundary events
