@@ -1,3 +1,8 @@
+Version 2.7
+- ENH: added usefftfilt option to pop_eegfiltnew.m
+- BUG: recompute transition band width after ceiling filter order to even integer. Fixes #3.
+- BUG: Adjust fft length for extreme cutoffs.
+
 Version 2.6.1
 - BUG: fixed handling of boundary events outside data range.
 
