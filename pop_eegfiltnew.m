@@ -82,8 +82,8 @@ end
 % GUI
 if nargin < 2
 
-    geometry = {[3, 1], [3, 1], [3, 1], 1, 1, 1, 1 [2 1.5 0.5] [2 1.5 0.5]  };
-    geomvert = [1 1 1 2 1 1 1 1 1];
+    geometry = {[3 1], [3 1], [3 1], 1, 1, 1, 1, [2 1.5 0.5], [2 1.5 0.5], 1};
+    geomvert = [1 1 1 2 1 1 1 1 1 1];
 
     cb_type = 'pop_chansel(get(gcbf, ''userdata''), ''field'', ''type'',   ''handle'', findobj(''parent'', gcbf, ''tag'', ''chantypes''));';
     cb_chan = 'pop_chansel(get(gcbf, ''userdata''), ''field'', ''labels'', ''handle'', findobj(''parent'', gcbf, ''tag'', ''channels''));';
@@ -103,7 +103,8 @@ if nargin < 2
               { 'style' 'pushbutton' 'string' '...'  'callback' cb_type } ...
               { 'style' 'text'       'string' 'OR channel labels or indices' } ...
               { 'style' 'edit'       'string' '' 'tag' 'channels' }  ...
-              { 'style' 'pushbutton' 'string' '...' 'callback' cb_chan }              
+              { 'style' 'pushbutton' 'string' '...' 'callback' cb_chan } ...
+              {'Style' 'checkbox', 'String', 'Use frequency domain filtering (faster for high filter orders > ~2000)', 'Tag' 'usefftfilt', 'Value', 0} ...
               };
 
     % channel labels
@@ -133,7 +134,8 @@ if nargin < 2
        [ chaninds, chanlist ] = eeg_decodechan(EEG(1).chanlocs, result{8});
        if isempty(chanlist), chanlist = chaninds; end
        options = { options{:}, 'channels' chanlist };
-    end        
+    end
+    if result{9}, options = { options{:} 'usefftfilt' result{9} }; end
 elseif ~ischar(varargin{1})
     % backward compatibility
     options = {};
@@ -232,6 +234,8 @@ if isempty(g.filtorder)
 
     g.filtorder = 3.3 / (df / EEG.srate); % Hamming window
     g.filtorder = ceil(g.filtorder / 2) * 2; % Filter order must be even.
+
+    df = 3.3 / g.filtorder * EEG.srate; % Correct reported df in case filter order was adjusted.
     
 else
 
@@ -248,7 +252,7 @@ end
 
 filterTypeArray = {'lowpass', 'bandpass'; 'highpass', 'bandstop (notch)'};
 fprintf('pop_eegfiltnew() - performing %d point %s filtering.\n', g.filtorder + 1, filterTypeArray{g.revfilt + 1, length(edgeArray)})
-fprintf('pop_eegfiltnew() - transition band width: %.4g Hz\n', df)
+fprintf('pop_eegfiltnew() - transition band width: %s Hz\n', mat2str(df))
 fprintf('pop_eegfiltnew() - passband edge(s): %s Hz\n', mat2str(edgeArray))
 
 % Passband edge to cutoff (transition band center; -6 dB)
@@ -280,7 +284,8 @@ end
 % Plot frequency response
 if g.plotfreqz
     try
-        figure; freqz(b, 1, 8192, EEG.srate);
+        nFFT = max([8192 2 ^ ceil(log2((EEG.srate / 2) / maxDf))]);
+        figure; freqz(b, 1, nFFT, EEG.srate);
     catch
         warning( 'Plotting of frequency response requires signal processing toolbox.' )
     end
